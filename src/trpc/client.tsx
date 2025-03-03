@@ -1,6 +1,7 @@
 "use client";
 // ^-- to make sure we can mount the Provider from a server component
 import type { QueryClient } from "@tanstack/react-query";
+import superjson from "superjson";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { httpBatchLink } from "@trpc/client";
 import { createTRPCReact } from "@trpc/react-query";
@@ -39,8 +40,14 @@ export function TRPCProvider(
     trpc.createClient({
       links: [
         httpBatchLink({
-          // transformer: superjson, <-- if you use a data transformer
+          transformer: superjson,
           url: getUrl(),
+          async headers() {
+            const headers = new Headers();
+            headers.set("x-trpc-sourse", "nextjs-react");
+            return headers;
+          },
+          // headers 函数会在每次 tRPC 请求时被调用，允许你动态添加或修改请求头。在你的代码中，添加了一个自定义请求头 x-trpc-source，其值为 "nextjs-react"
         }),
       ],
     })
