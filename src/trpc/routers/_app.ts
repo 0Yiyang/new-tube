@@ -1,19 +1,11 @@
-import { z } from "zod";
-import { protectedProcedure, createTRPCRouter } from "../init";
+import { createTRPCRouter } from "../init";
+import { categoriesRouter } from "@/modules/categories/server/procedures";
+
+// 创建 tRPC 路由。
+// - 将多个 tRPC 过程组织在一起。(把router集合)
+// - 提供类型安全的 API 端点。
 export const appRouter = createTRPCRouter({
-  hello: protectedProcedure
-    .input(
-      z.object({
-        text: z.string(),
-      })
-    )
-    .query((opts) => {
-      // throw new TRPCError({ code: "BAD_REQUEST" });
-      // console.log({ dbContext: opts.ctx.user });
-      return {
-        greeting: `hello ${opts.input.text}`,
-      };
-    }),
+  categories: categoriesRouter,
 });
 // export type definition of API
 export type AppRouter = typeof appRouter;

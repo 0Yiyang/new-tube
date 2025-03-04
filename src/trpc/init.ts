@@ -27,6 +27,9 @@ export const createTRPCRouter = t.router;
 export const createCallerFactory = t.createCallerFactory;
 export const baseProcedure = t.procedure;
 
+// 受保护的 tRPC 过程
+// - 确保只有已登录的用户可以访问该过程。
+// - 在上下文中注入用户信息（通过 `opts.ctx.user`）
 export const protectedProcedure = t.procedure.use(async function isAuthed(
   opts
 ) {
@@ -44,6 +47,7 @@ export const protectedProcedure = t.procedure.use(async function isAuthed(
   if (!user) {
     throw new TRPCError({ code: "UNAUTHORIZED" });
   }
+  // 限制请求频率
   const { success } = await ratelimit.limit(user.id);
   if (!success) {
     console.log("TOO_MANY_REQUESTS");
