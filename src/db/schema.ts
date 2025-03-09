@@ -18,7 +18,7 @@ export const users = pgTable(
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },
   (t) => [uniqueIndex("clerk_id_idx").on(t.clerkId)]
-  // TODO:
+  // 加上唯一索引，确保其在表中唯一
 );
 export const categories = pgTable(
   "categories",
@@ -31,4 +31,4 @@ export const categories = pgTable(
   },
   (t) => [uniqueIndex("name_idx").on(t.name)]
 );
-// 给name加上索引
+// 给name字段加上唯一索引，确保其在表中唯一，不允许重复。name 字段已经通过 .unique() 设置了唯一约束，但这里又额外创建了一个唯一索引。

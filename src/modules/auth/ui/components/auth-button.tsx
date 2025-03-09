@@ -1,7 +1,8 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import { SignedOut, SignedIn, SignInButton, UserButton } from "@clerk/nextjs";
-import { UserCircleIcon } from "lucide-react";
+import { ClapperboardIcon, UserCircleIcon } from "lucide-react";
+import Link from "next/link";
 import React from "react";
 
 const AuthButton = () => {
@@ -9,7 +10,24 @@ const AuthButton = () => {
     // Button里规定了svg大小，想要更改，需要在button里改[&_svg]:size-4
     <>
       <SignedIn>
-        <UserButton />
+        <Button asChild variant="secondary">
+          <Link href="/studio">
+            <ClapperboardIcon className="size-4" />
+            Studio
+          </Link>
+        </Button>
+        {/* TODO:给原有按钮排序 */}
+        <UserButton>
+          <UserButton.MenuItems>
+            {/* TODO:add user profile menu button*/}
+            <UserButton.Link
+              label="Studio"
+              href="/studio"
+              labelIcon={<ClapperboardIcon className="size-4" />}
+            />
+            <UserButton.Action label="manageAccount" />
+          </UserButton.MenuItems>
+        </UserButton>
         {/*TODO: Add menu items for studio and user profile */}
       </SignedIn>
       <SignedOut>
