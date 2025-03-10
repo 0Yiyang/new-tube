@@ -37,14 +37,19 @@
 import { HomeView } from "@/modules/home/ui/views/home-view";
 import { HydrateClient, trpc } from "@/trpc/server";
 export const dynamic = "force-dynamic";
-// TODO:dynamic是啥
+// force-dynamic是啥:
+// 禁止静态渲染和缓存
+// 强制把一个页面或路由都动态渲染;
+// 动态导入，await searchParams，void trpc.categories.getmany.prefetch();都是动态获取的
 interface PageProps {
   searchParams: Promise<{ categoryId?: string }>;
 }
 const Page = async ({ searchParams }: PageProps) => {
   const { categoryId } = await searchParams;
+  // 动态预取TRPC数据
   void trpc.categories.getmany.prefetch();
   return (
+    // 客户端渲染时，把预取数据注入
     <HydrateClient>
       <HomeView categoryId={categoryId} />
     </HydrateClient>
