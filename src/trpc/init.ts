@@ -47,7 +47,7 @@ export const protectedProcedure = t.procedure.use(async function isAuthed(
   if (!user) {
     throw new TRPCError({ code: "UNAUTHORIZED" });
   }
-  // 限制请求频率
+  // 限制请求频率,凭借user.id
   const { success } = await ratelimit.limit(user.id);
   if (!success) {
     console.log("TOO_MANY_REQUESTS");
