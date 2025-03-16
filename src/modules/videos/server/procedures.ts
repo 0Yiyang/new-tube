@@ -11,6 +11,17 @@ export const videosRouter = createTRPCRouter({
       new_asset_settings: {
         passthrough: userId,
         playback_policy: ["public"],
+        // TODO:input 字段的作用是 为上传的视频生成自动字幕。
+        input: [
+          {
+            generated_subtitles: [
+              {
+                language_code: "en",
+                name: "English",
+              },
+            ],
+          },
+        ],
       },
       cors_origin: "*", //上传域TODO:，但在生产环境建议改为特定域名：设置自己的url
     });

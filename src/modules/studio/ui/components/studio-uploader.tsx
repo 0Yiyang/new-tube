@@ -16,7 +16,7 @@ export const StudioUploader = ({
   onSuccess,
 }: StudioUploaderProps) => {
   return (
-    // TODO:为什么hidden
+    // TODO: 为什么hidden
     <div>
       <MuxUploader
         onSuccess={onSuccess}

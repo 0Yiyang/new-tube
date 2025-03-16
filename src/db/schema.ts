@@ -1,5 +1,7 @@
 import { relations } from "drizzle-orm";
 import {
+  integer,
+  pgEnum,
   pgTable,
   text,
   timestamp,
@@ -36,7 +38,10 @@ export const categories = pgTable(
   (t) => [uniqueIndex("name_idx").on(t.name)]
 );
 //给name字段加上唯一索引，确保其在表中唯一，不允许重复。name 字段已经通过 .unique() 设置了唯一约束，但这里又额外创建了一个唯一索引。
-
+export const VideoVisibility = pgEnum("video_visibility", [
+  "private",
+  "public",
+]);
 export const videos = pgTable("videos", {
   id: uuid("id").primaryKey().defaultRandom(),
   title: text("tittle").notNull(),
@@ -47,6 +52,10 @@ export const videos = pgTable("videos", {
   muxPlaybackId: text("mux_playback_id").unique(),
   muxTrackId: text("mux_track_id").unique(),
   muxTrackStatus: text("mux_Track_status"),
+  thumbnailUrl: text("thumbnail_url"),
+  previewUrl: text("preview_url"),
+  duration: integer("duration").default(0).notNull(),
+  visibility: VideoVisibility("visibility").default("private").notNull(),
   userId: uuid("user_id")
     .references(() => users.id, { onDelete: "cascade" })
     .notNull(),
