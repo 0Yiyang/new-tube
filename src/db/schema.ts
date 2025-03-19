@@ -13,6 +13,7 @@ import {
   createUpdateSchema,
   createSelectSchema,
 } from "drizzle-zod";
+import { z } from "zod";
 export const users = pgTable(
   "users",
   {
@@ -70,7 +71,12 @@ export const videos = pgTable("videos", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 export const videoSelectSchema = createSelectSchema(videos);
-export const videoUpdateSchema = createUpdateSchema(videos);
+export const videoUpdateSchema = createUpdateSchema(videos).extend({
+  // trim()去除首尾空格
+  title: z.string().trim().min(1, {
+    message: "Title must not be empty",
+  }),
+});
 export const videoInsertSchema = createInsertSchema(videos);
 // TODO:relations 和foreign key关系
 export const videoRelations = relations(videos, ({ one }) => ({

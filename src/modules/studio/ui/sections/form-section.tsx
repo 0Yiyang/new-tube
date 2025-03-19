@@ -89,7 +89,7 @@ const FormSectionSuspense = ({ videoId }: FormSectionProps) => {
 
   const form = useForm<z.infer<typeof videoUpdateSchema>>({
     resolver: zodResolver(videoUpdateSchema), // TODO: resolver
-    defaultValues: video,
+    defaultValues: video, //name:表单字段名称，和defaultValues里的字段名一致
   });
 
   // const onSubmit = async (data: z.infer<typeof videoUpdateSchema>) => {
@@ -116,7 +116,8 @@ const FormSectionSuspense = ({ videoId }: FormSectionProps) => {
     }, 2000);
   };
   return (
-    // TODO:from
+    // <Form> 提供表单上下文，<form> 处理表单提交。{...form}将useForm 提供的上下文（form）传递给子组件
+    // 子组件（如 <FormField>）可以访问表单的状态和方法。
     <Form {...form}>
       {/* 只有通过 handleSubmit类型验证，才会调用onSubmit*/}
       <form onSubmit={form.handleSubmit(onSubmit)}>
@@ -151,10 +152,14 @@ const FormSectionSuspense = ({ videoId }: FormSectionProps) => {
             </DropdownMenu>
           </div>
         </div>
-        {/* TODO:grid col span */}
+        {/* grid col span */}
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
           <div className="space-y-8 lg:col-span-3">
             {/* title */}
+            {/* field 是一个对象，包含以下属性：
+            value：字段的当前值。onChange：字段值变化的回调函数。
+            onBlur：字段失去焦点的回调函数。ref：字段的引用（用于注册字段）。
+            field 的作用是将表单字段与表单上下文绑定。 */}
             <FormField
               control={form.control}
               name="title"
@@ -165,6 +170,7 @@ const FormSectionSuspense = ({ videoId }: FormSectionProps) => {
                     {/* 添加ai生成按钮 */}
                   </FormLabel>
                   <FormControl>
+                    {/* field里面包含value不需要手动设置 */}
                     <Input {...field} placeholder="Add a title to your video" />
                   </FormControl>
                   <FormMessage />
@@ -178,10 +184,14 @@ const FormSectionSuspense = ({ videoId }: FormSectionProps) => {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Description</FormLabel>
+                  {/* FormControl包裹表单输入组件 */}
                   <FormControl>
-                    {/* TODO: resize*/}
+                    {/* resize-none：禁止调整缩放文本区域大小，一般默认可以调整*/}
+                    {/* 将 field 对象的所有属性展开到 <Textarea> 组件中。 */}
                     <Textarea
                       {...field}
+                      // 默认值可能是 null 或 undefined，可以显式设置value.
+                      // value 会覆盖 {...field} 中的 value。
                       value={field.value ?? ""}
                       rows={10}
                       className="resize-none pr-10"
@@ -196,7 +206,6 @@ const FormSectionSuspense = ({ videoId }: FormSectionProps) => {
             {/* category */}
             <FormField
               control={form.control}
-              // TODO:formfiled里的name都schema
               name="categoryId"
               render={({ field }) => (
                 <FormItem>
@@ -212,7 +221,7 @@ const FormSectionSuspense = ({ videoId }: FormSectionProps) => {
                     </FormControl>
                     <SelectContent>
                       {categories.map((category) => (
-                        // TODO:
+                        // value 是 <SelectItem> 的唯一标识符，用于标识用户选择的选项,所以用id。
                         <SelectItem key={category.id} value={category.id}>
                           {category.name}
                         </SelectItem>
@@ -282,7 +291,6 @@ const FormSectionSuspense = ({ videoId }: FormSectionProps) => {
             {/* visibility */}
             <FormField
               control={form.control}
-              // TODO:formfiled里的name都schema
               name="visibility"
               render={({ field }) => (
                 <FormItem>
