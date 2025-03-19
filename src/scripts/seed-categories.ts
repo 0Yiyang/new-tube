@@ -2,7 +2,7 @@ import db from "@/db";
 import { categories } from "@/db/schema";
 
 const categoryNames = [
-  "CArs and vehicles",
+  "Cars and vehicles",
   "Comedy",
   "Education",
   "Gaming",

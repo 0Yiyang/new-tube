@@ -1,9 +1,52 @@
 import db from "@/db";
-import { videos } from "@/db/schema";
+import { videos, videoUpdateSchema } from "@/db/schema";
 import { mux } from "@/lib/mux";
 import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
+import { TRPCError } from "@trpc/server";
+import { and, eq } from "drizzle-orm";
+import { z } from "zod";
 
 export const videosRouter = createTRPCRouter({
+  remove: protectedProcedure
+    .input(z.object({ id: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      const { id: userId } = ctx.user;
+      if (!input.id) {
+        throw new TRPCError({ code: "BAD_REQUEST" });
+      }
+      const [removedVideo] = await db
+        .delete(videos)
+        .where(and(eq(videos.id, input.id), eq(videos.userId, userId)))
+        .returning();
+      if (!removedVideo) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
+      return removedVideo;
+    }),
+  update: protectedProcedure
+    .input(videoUpdateSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { id: userId } = ctx.user;
+      if (!input.id) {
+        throw new TRPCError({ code: "BAD_REQUEST" });
+      }
+      const [updatedVideo] = await db
+        .update(videos)
+        .set({
+          // ...input,这是一个api端点，希望控制更新内容，防止恶意
+          title: input.title,
+          description: input.description,
+          categoryId: input.categoryId,
+          visibility: input.visibility,
+          updatedAt: new Date(),
+        })
+        .where(and(eq(videos.id, input.id), eq(videos.userId, userId)))
+        .returning();
+      if (!updatedVideo) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
+      return updatedVideo;
+    }),
   create: protectedProcedure.mutation(async ({ ctx }) => {
     const { id: userId } = ctx.user;
     // 创建upload上传权限,创建上传端点
@@ -34,8 +77,8 @@ export const videosRouter = createTRPCRouter({
         muxStatus: "waiting",
       })
       .returning();
-    // TODO:returning()干什么
-    // TODO:为什么要return
+    // TODO:returning()，用于delect,insert，update干什么->直接返回修改后的值，不用再查询一边
+
     return {
       video: video,
       url: upload.url,
