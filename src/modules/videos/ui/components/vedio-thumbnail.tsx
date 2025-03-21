@@ -1,5 +1,6 @@
 import { formatDuration } from "@/lib/utils";
 import Image from "next/image";
+import { THUMBNAIL_FULLBACK } from "../../constant";
 interface VideoThumbnailProps {
   title: string;
   duration: number;
@@ -21,7 +22,7 @@ export const VideoThumbnail = ({
       <div className="relative w-full overflow-hidden aspect-video rounded-xl">
         {/*TODO: fill 和object-cover一起出现 图片按原比例填充父容器，超出部分被裁剪。 */}
         <Image
-          src={imageUrl ?? "/placeholder.svg"}
+          src={imageUrl || THUMBNAIL_FULLBACK}
           alt={title}
           fill
           className="w-full h-full object-cover  group-hover:opacity-0"
@@ -29,7 +30,7 @@ export const VideoThumbnail = ({
         <Image
           unoptimized={!!previewUrl}
           // 有动画就不对动画优化
-          src={previewUrl ?? "/placeholder.svg"}
+          src={previewUrl || THUMBNAIL_FULLBACK}
           alt={title}
           fill
           className="w-full h-full object-cover opacity-0  group-hover:opacity-100"

@@ -26,6 +26,7 @@ export const ResponsiveModal = ({
   const isMobile = useIsMobile();
   if (isMobile) {
     return (
+      // TODO:onOpenChange调用  1.手动关闭打开抽屉，2.open状态改变  如使用seOpen
       <Drawer open={open} onOpenChange={onOpenChange}>
         <DrawerContent>
           <DrawerHeader>

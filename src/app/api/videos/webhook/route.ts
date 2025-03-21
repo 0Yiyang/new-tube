@@ -10,6 +10,7 @@ import { mux } from "@/lib/mux";
 import db from "@/db";
 import { videos } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { UTApi } from "uploadthing/server";
 
 const SIGNING_SECRET = process.env.MUX_WEBHOOK_SECRET!;
 
@@ -58,6 +59,7 @@ export const POST = async (request: Request) => {
         .where(eq(videos.muxUploadId, data.upload_id));
       break;
     }
+
     case "video.asset.ready": {
       const data = payload.data as VideoAssetReadyWebhookEvent["data"];
       const playbackId = data.playback_ids?.[0].id;
@@ -68,10 +70,40 @@ export const POST = async (request: Request) => {
       if (!playbackId) {
         return new Response("Missing playback id", { status: 400 });
       }
-      // 缩略图
-      const thumbnailUrl = `https://image.mux.com/${playbackId}/thumbnail.jpg`;
-      const previewUrl = `https://image.mux.com/${playbackId}/animated.gif`;
+
+      // //TODO: 检查是否已经处理过
+      // const [existingVideo] = await db
+      //   .select({
+      //     thumbnailUrl: videos.thumbnailUrl,
+      //     previewUrl: videos.previewUrl,
+      //   })
+      //   .from(videos)
+      //   .where(eq(videos.muxUploadId, data.upload_id));
+      // if (existingVideo.thumbnailUrl) {
+      //   console.log("Thumbnail and preview already uploaded.");
+      //   return new Response("Already processed", { status: 200 });
+      // }
+
+      // 从创建开始就上传到upload
+      const tempthumbnailUrl = `https://image.mux.com/${playbackId}/thumbnail.jpg`;
+      const temppreviewUrl = `https://image.mux.com/${playbackId}/animated.gif`;
       const duration = data.duration ? Math.round(data.duration * 1000) : 0;
+
+      const utapi = new UTApi();
+      const [uploadedThumbnailUrl, uploadedPreviewUrl] =
+        await utapi.uploadFilesFromUrl([tempthumbnailUrl, temppreviewUrl]);
+      if (!uploadedThumbnailUrl.data || !uploadedPreviewUrl.data) {
+        return new Response("Failed to upload thumbnail or preview", {
+          status: 500,
+        });
+      }
+
+      const thumbnailKey = uploadedThumbnailUrl.data.key;
+      const thumbnailUrl = uploadedThumbnailUrl.data.url;
+      const previewKey = uploadedPreviewUrl.data.key;
+      const previewUrl = uploadedPreviewUrl.data.url;
+      // const { key: thumbnailKey, url: thumbnailUrl } = uploadedThumbnailUrl.data;
+      // const { key: previewKey, url: previewUrl } = uploadedPreviewUrl?.data;
       await db
         .update(videos)
         .set({
@@ -79,7 +111,9 @@ export const POST = async (request: Request) => {
           muxStatus: data.status,
           muxPlaybackId: playbackId,
           thumbnailUrl,
+          thumbnailKey,
           previewUrl,
+          previewKey,
           duration,
         })
         .where(eq(videos.muxUploadId, data.upload_id));
