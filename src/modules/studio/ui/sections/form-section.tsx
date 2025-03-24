@@ -8,6 +8,7 @@ import {
   CopyIcon,
   Globe2Icon,
   ImagePlusIcon,
+  Loader2Icon,
   LockIcon,
   MoreVerticalIcon,
   RotateCwIcon,
@@ -103,6 +104,38 @@ const FormSectionSuspense = ({ videoId }: FormSectionProps) => {
       toast.error("Something went wrong");
     },
   });
+  const genernateThumbnail = trpc.videos.generateThumbnail.useMutation({
+    onSuccess: () => {
+      // utils.studio.getMany.invalidate();
+      // utils.studio.getOne.invalidate({ id: videoId });
+      toast.success("background job is started", {
+        description: "it takes a long time",
+      });
+    },
+    onError: () => {
+      toast.error("Something went wrong");
+    },
+  });
+  const genernateTitle = trpc.videos.generateTitle.useMutation({
+    onSuccess: () => {
+      toast.success("background job is started", {
+        description: "it takes a long time",
+      });
+    },
+    onError: () => {
+      toast.error("Something went wrong");
+    },
+  });
+  const genernateDescription = trpc.videos.generateDescription.useMutation({
+    onSuccess: () => {
+      toast.success("background job is started", {
+        description: "it takes a long time",
+      });
+    },
+    onError: () => {
+      toast.error("Something went wrong");
+    },
+  });
   const form = useForm<z.infer<typeof videoUpdateSchema>>({
     resolver: zodResolver(videoUpdateSchema), // TODO: resolver
     defaultValues: video, //name:表单字段名称，和defaultValues里的字段名一致
@@ -132,11 +165,9 @@ const FormSectionSuspense = ({ videoId }: FormSectionProps) => {
     }, 2000);
   };
   const [thumbnailModalOpen, setThumbnailModalOpen] = useState(false);
-  // Dispatch<SetStateAction<boolean>>;
+  // TODO:Dispatch<SetStateAction<boolean>>;
   // (value: boolean | ((prevState: boolean) => boolean)) => void;
-  // 这意味着 setThumbnailModalOpen 可以接受：
-  // 一个布尔值
-  // 或一个函数，该函数接收当前状态并返回一个新的布尔值。
+  // 这意味着 setThumbnailModalOpen 可以接受： 一个布尔值 或一个函数，该函数接收当前状态并返回一个新的布尔值。
 
   return (
     <>
@@ -196,7 +227,25 @@ const FormSectionSuspense = ({ videoId }: FormSectionProps) => {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>
-                      Title
+                      <div className="flex items-center gap-x-2">
+                        Title
+                        <Button
+                          size="icon"
+                          variant="outline"
+                          type="button"
+                          className="rounded-full size-6 [&_svg]:size-3"
+                          onClick={() => genernateTitle.mutate({ id: videoId })}
+                          disabled={
+                            genernateTitle.isPending || !video.muxTrackId
+                          }
+                        >
+                          {genernateTitle.isPending ? (
+                            <Loader2Icon className="animate-spin" />
+                          ) : (
+                            <SparklesIcon />
+                          )}
+                        </Button>
+                      </div>
                       {/* 添加ai生成按钮 */}
                     </FormLabel>
                     <FormControl>
@@ -216,7 +265,29 @@ const FormSectionSuspense = ({ videoId }: FormSectionProps) => {
                 name="description"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Description</FormLabel>
+                    <FormLabel>
+                      <div className="flex items-center gap-x-2">
+                        Description
+                        <Button
+                          size="icon"
+                          variant="outline"
+                          type="button"
+                          className="rounded-full size-6 [&_svg]:size-3"
+                          onClick={() =>
+                            genernateDescription.mutate({ id: videoId })
+                          }
+                          disabled={
+                            genernateDescription.isPending || !video.muxTrackId
+                          }
+                        >
+                          {genernateDescription.isPending ? (
+                            <Loader2Icon className="animate-spin" />
+                          ) : (
+                            <SparklesIcon />
+                          )}
+                        </Button>
+                      </div>
+                    </FormLabel>
                     {/* FormControl包裹表单输入组件 */}
                     <FormControl>
                       {/* resize-none：禁止调整缩放文本区域大小，一般默认可以调整*/}
@@ -270,7 +341,11 @@ const FormSectionSuspense = ({ videoId }: FormSectionProps) => {
                               <ImagePlusIcon className="size-4 mr-1" />
                               Change
                             </DropdownMenuItem>
-                            <DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() =>
+                                genernateThumbnail.mutate({ id: videoId })
+                              }
+                            >
                               <SparklesIcon className="size-4 mr-1" />
                               AI-generated
                             </DropdownMenuItem>
