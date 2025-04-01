@@ -7,7 +7,7 @@ import { createUploadthing, type FileRouter } from "uploadthing/next";
 import { UploadThingError, UTApi } from "uploadthing/server";
 
 const f = createUploadthing();
-
+// 这段代码的核心功能是通过 UploadDropzone 上传文件，并处理权限验证、清理旧文件和保存新文件信息。
 // FileRouter for your app, can contain multiple FileRoutes
 export const ourFileRouter = {
   thumbnailUploader: f({

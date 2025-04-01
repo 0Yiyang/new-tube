@@ -1,20 +1,42 @@
 import db from "@/db";
-import { videos, videoUpdateSchema } from "@/db/schema";
+import { users, videos, videoUpdateSchema } from "@/db/schema";
 import { mux } from "@/lib/mux";
 import { workflow } from "@/lib/workflow";
-import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
+import {
+  baseProcedure,
+  createTRPCRouter,
+  protectedProcedure,
+} from "@/trpc/init";
 import { TRPCError } from "@trpc/server";
-import { and, eq } from "drizzle-orm";
+import { and, eq, getTableColumns } from "drizzle-orm";
 import { UTApi } from "uploadthing/server";
 import { z } from "zod";
 
 export const videosRouter = createTRPCRouter({
+  getOne: baseProcedure
+    .input(z.object({ id: z.string().uuid() }))
+    .query(async ({ input }) => {
+      // 获取某一个video的详细资料,innerJoin,users
+      const [existingVideo] = await db
+        .select({
+          ...getTableColumns(videos),
+          user: {
+            ...getTableColumns(users),
+          },
+        })
+        .from(videos)
+        .innerJoin(users, eq(videos.userId, users.id))
+        .where(eq(videos.id, input.id));
+      if (!existingVideo) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
+      return existingVideo;
+    }),
   // TODO:workflow.trigger:触发远程的工作流执行。
   // 当用户请求生成视频标题时，后端并不直接处理，
   // 而是通过调用外部服务（如Upstash）来启动一个工作流，
   // 这可能涉及调用AI服务或其他耗时任务，从而异步处理请求
   // 返回的workflowRunId可以让客户端轮询或通过Webhook获取结果。
-
   generateTitle: protectedProcedure
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
@@ -38,13 +60,18 @@ export const videosRouter = createTRPCRouter({
     }),
 
   generateThumbnail: protectedProcedure
-    .input(z.object({ id: z.string().uuid() }))
+    .input(
+      z.object({
+        prompt: z.string().min(10),
+        id: z.string().uuid(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       const { id: userId } = ctx.user;
-      // TODO:干什么的，
+      // TODO:干什么的->开启后台任务
       const { workflowRunId } = await workflow.trigger({
-        url: `${process.env.UPSTASH_WORKFLOW_URL}/api/videos/workflows/title`,
-        body: { userId, videoId: input.id },
+        url: `${process.env.UPSTASH_WORKFLOW_URL}/api/videos/workflows/thumbnail`,
+        body: { userId, videoId: input.id, prompt: input.prompt },
       });
       return workflowRunId;
     }),

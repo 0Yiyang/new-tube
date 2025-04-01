@@ -52,6 +52,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { THUMBNAIL_FULLBACK } from "@/modules/videos/constant";
 import { ThumbnailUploadModal } from "../components/thumbnail-upload-modal";
+import { ThumbnailGenerateModal } from "../components/thumbnail-generate-modal";
 
 interface FormSectionProps {
   videoId: string;
@@ -66,13 +67,73 @@ export const FormSection = ({ videoId }: FormSectionProps) => {
   );
 };
 const FormSectionSkeleton = () => {
-  return <Skeleton className="w-200 h-20"></Skeleton>;
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-6">
+        <div className="space-y-2">
+          <Skeleton className="h-7 w-32" />
+          <Skeleton className="h-4 w-40" />
+        </div>
+        <Skeleton className="h-9 w-24" />
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+        <div className="flex flex-col space-y-8 lg:col-span-3">
+          <div className="space-y-2">
+            <Skeleton className="h-5 w-16" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+          <div className="space-y-2">
+            <Skeleton className="h-5 w-24" />
+            <Skeleton className="h-[220px] w-full" />
+          </div>
+          <div className="space-y-2">
+            <Skeleton className="h-5 w-20" />
+            <Skeleton className="h-[84px] w-full" />
+          </div>
+          <div className="space-y-2">
+            <Skeleton className="h-5 w-20" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+        </div>
+        <div className="flex flex-col space-y-8 lg:col-span-2">
+          <div className="flex flex-col gap-4 bg-[#F9F9F9] rounded-xl overflow-hidden ">
+            <Skeleton className=" aspect-video " />
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-5 w-full" />
+            </div>
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-5 w-32" />
+            </div>
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-5 w-32" />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Skeleton className="h-5 w-20" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 };
 const FormSectionSuspense = ({ videoId }: FormSectionProps) => {
   const router = useRouter();
   const utils = trpc.useUtils();
+
+  const [thumbnailModalOpen, setThumbnailModalOpen] = useState(false);
+  const [thumbnailGenerateModalOpen, setThumbnailGenerateModalOpen] =
+    useState(false);
+  // TODO:setThumbnailModalOpen:Dispatch<SetStateAction<boolean>>;
+  // (value: boolean | ((prevState: boolean) => boolean)) => void;
+  // 这意味着 setThumbnailModalOpen 可以接受： 一个布尔值 或一个函数，该函数接收当前状态并返回一个新的布尔值。
+
   const [video] = trpc.studio.getOne.useSuspenseQuery({ id: videoId });
   const [categories] = trpc.categories.getmany.useSuspenseQuery();
+
   const update = trpc.videos.update.useMutation({
     onSuccess: () => {
       utils.studio.getMany.invalidate();
@@ -83,6 +144,7 @@ const FormSectionSuspense = ({ videoId }: FormSectionProps) => {
       toast.error("Something went wrong");
     },
   });
+
   // input调用的时候加上
   const remove = trpc.videos.remove.useMutation({
     onSuccess: () => {
@@ -94,6 +156,7 @@ const FormSectionSuspense = ({ videoId }: FormSectionProps) => {
       toast.error("Something went wrong");
     },
   });
+
   const restoreThumbnail = trpc.videos.restoreThumbnail.useMutation({
     onSuccess: () => {
       utils.studio.getMany.invalidate();
@@ -104,18 +167,7 @@ const FormSectionSuspense = ({ videoId }: FormSectionProps) => {
       toast.error("Something went wrong");
     },
   });
-  const genernateThumbnail = trpc.videos.generateThumbnail.useMutation({
-    onSuccess: () => {
-      // utils.studio.getMany.invalidate();
-      // utils.studio.getOne.invalidate({ id: videoId });
-      toast.success("background job is started", {
-        description: "it takes a long time",
-      });
-    },
-    onError: () => {
-      toast.error("Something went wrong");
-    },
-  });
+
   const genernateTitle = trpc.videos.generateTitle.useMutation({
     onSuccess: () => {
       toast.success("background job is started", {
@@ -164,10 +216,6 @@ const FormSectionSuspense = ({ videoId }: FormSectionProps) => {
       SetIsCopied(false);
     }, 2000);
   };
-  const [thumbnailModalOpen, setThumbnailModalOpen] = useState(false);
-  // TODO:Dispatch<SetStateAction<boolean>>;
-  // (value: boolean | ((prevState: boolean) => boolean)) => void;
-  // 这意味着 setThumbnailModalOpen 可以接受： 一个布尔值 或一个函数，该函数接收当前状态并返回一个新的布尔值。
 
   return (
     <>
@@ -176,6 +224,11 @@ const FormSectionSuspense = ({ videoId }: FormSectionProps) => {
         open={thumbnailModalOpen}
         // TODO:（value:boolean| ((prevState: boolean) => boolean)）=>void
         onOpenChange={setThumbnailModalOpen}
+      />
+      <ThumbnailGenerateModal
+        videoId={videoId}
+        open={thumbnailGenerateModalOpen}
+        onOpenChange={setThumbnailGenerateModalOpen}
       />
       {/* // <Form> 提供表单上下文，<form> 处理表单提交。{...form}将useForm 提供的上下文（form）传递给子组件 */}
       {/* // 子组件（如 <FormField>）可以访问表单的状态和方法。 */}
@@ -190,7 +243,11 @@ const FormSectionSuspense = ({ videoId }: FormSectionProps) => {
               </p>
             </div>
             <div className="flex items-center gap-x-2">
-              <Button type="submit" disabled={update.isPending}>
+              {/* TODO:更改后可以保存 form.formState.isDirty*/}
+              <Button
+                type="submit"
+                disabled={update.isPending || !form.formState.isDirty}
+              >
                 Save
               </Button>
               <DropdownMenu>
@@ -343,7 +400,7 @@ const FormSectionSuspense = ({ videoId }: FormSectionProps) => {
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={() =>
-                                genernateThumbnail.mutate({ id: videoId })
+                                setThumbnailGenerateModalOpen(true)
                               }
                             >
                               <SparklesIcon className="size-4 mr-1" />
