@@ -1,5 +1,5 @@
 import db from "@/db";
-import { users, videos, videoUpdateSchema } from "@/db/schema";
+import { users, videos, videoUpdateSchema, videoViews } from "@/db/schema";
 import { mux } from "@/lib/mux";
 import { workflow } from "@/lib/workflow";
 import {
@@ -23,10 +23,12 @@ export const videosRouter = createTRPCRouter({
           user: {
             ...getTableColumns(users),
           },
+          viewCount: db.$count(videoViews, eq(videoViews.videoId, videos.id)), //子查询，与主查询的 videos 表动态关联：统计观看次数 关联当前视频的ID
         })
         .from(videos)
-        .innerJoin(users, eq(videos.userId, users.id))
+        .innerJoin(users, eq(videos.userId, users.id)) // 关联作者
         .where(eq(videos.id, input.id));
+      // 先使用where筛选出目标视频，再子查询，需要引用 videos.id（已通过主查询确定）。
       if (!existingVideo) {
         throw new TRPCError({ code: "NOT_FOUND" });
       }

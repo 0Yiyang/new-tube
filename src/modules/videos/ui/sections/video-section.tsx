@@ -6,6 +6,7 @@ import { VideoPlayer } from "../components/video-player";
 import { cn } from "@/lib/utils";
 import { VideoBanner } from "../components/video-banner";
 import { VideoTopRow } from "../components/video-top-row";
+import { useAuth } from "@clerk/nextjs";
 
 interface VideoSectionProps {
   videoId: string;
@@ -20,8 +21,19 @@ export const VideoSection = ({ videoId }: VideoSectionProps) => {
   );
 };
 const VideoSectionSuspense = ({ videoId }: VideoSectionProps) => {
+  const { isSignedIn } = useAuth();
+  const utils = trpc.useUtils();
   // prefetch对应useSusenseQuery,这时可以获得数据
   const [video] = trpc.videos.getOne.useSuspenseQuery({ id: videoId });
+  const createVideoView = trpc.videoViews.create.useMutation({
+    onSuccess: () => {
+      utils.videos.getOne.invalidate({ id: videoId });
+    },
+  });
+  const handlePlay = () => {
+    if (!isSignedIn) return null;
+    createVideoView.mutate({ videoId });
+  };
   return (
     <>
       <div
@@ -32,7 +44,7 @@ const VideoSectionSuspense = ({ videoId }: VideoSectionProps) => {
       >
         <VideoPlayer
           autoPlay
-          onPlay={() => {}}
+          onPlay={handlePlay}
           playbackId={video.muxPlaybackId}
           thumbnailUrl={video.thumbnailUrl}
         />
