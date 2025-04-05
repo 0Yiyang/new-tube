@@ -1,5 +1,11 @@
 import db from "@/db";
-import { users, videos, videoUpdateSchema, videoViews } from "@/db/schema";
+import {
+  users,
+  videoReactions,
+  videos,
+  videoUpdateSchema,
+  videoViews,
+} from "@/db/schema";
 import { mux } from "@/lib/mux";
 import { workflow } from "@/lib/workflow";
 import {
@@ -8,27 +14,73 @@ import {
   protectedProcedure,
 } from "@/trpc/init";
 import { TRPCError } from "@trpc/server";
-import { and, eq, getTableColumns } from "drizzle-orm";
+import { and, eq, getTableColumns, inArray } from "drizzle-orm";
 import { UTApi } from "uploadthing/server";
 import { z } from "zod";
 
 export const videosRouter = createTRPCRouter({
+  // 公共表
   getOne: baseProcedure
     .input(z.object({ id: z.string().uuid() }))
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
       // 获取某一个video的详细资料,innerJoin,users
+
+      const { clerkUserId } = ctx;
+      let userId;
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(inArray(users.clerkId, clerkUserId ? [clerkUserId] : []));
+      // inArray在一个列里面找数组里的值   inArray 是为了在 ClerkUserId 为空时静默返回空结
+      //TODO:有值才查询，无值则忽略  inArray(column, values): WHERE users.clerk_id IN ('user-123')  -
+      //  lerkUserId 存在时：转换为 users.clerkId IN ('user-123')（精确匹配）。
+      // ClerkUserId 为 null/undefined 时：转换为 users.clerkId IN ()（空数组），数据库会直接返回空结果。
+      if (user) {
+        userId = user.id;
+      }
+      // 预先定义一个临时表（此处为 viewer_reaction），供后续查询引用。预先制表并查询
+      const viewerReactions = db.$with("viewer_reaction").as(
+        db
+          .select({
+            videoId: videoReactions.videoId,
+            type: videoReactions.type,
+          })
+          .from(videoReactions)
+          .where(inArray(videoReactions.userId, userId ? [userId] : []))
+        // 没登陆，登录但是没有互动（）
+      );
       const [existingVideo] = await db
+        .with(viewerReactions) //.with() 将其引入主查询中，使其可被引用。
         .select({
           ...getTableColumns(videos),
           user: {
             ...getTableColumns(users),
           },
           viewCount: db.$count(videoViews, eq(videoViews.videoId, videos.id)), //子查询，与主查询的 videos 表动态关联：统计观看次数 关联当前视频的ID
+          likeCount: db.$count(
+            videoReactions,
+            and(
+              eq(videoReactions.videoId, videos.id),
+              eq(videoReactions.type, "like")
+            )
+          ),
+          dislikeCount: db.$count(
+            videoReactions,
+            and(
+              eq(videoReactions.videoId, videos.id),
+              eq(videoReactions.type, "dislike")
+            )
+          ),
+          // 也要拿到viewer的态度，
+          viewerReaction: viewerReactions.type,
         })
         .from(videos)
-        .innerJoin(users, eq(videos.userId, users.id)) // 关联作者
-        .where(eq(videos.id, input.id));
-      // 先使用where筛选出目标视频，再子查询，需要引用 videos.id（已通过主查询确定）。
+        .innerJoin(users, eq(videos.userId, users.id)) // 关联作者，
+        .leftJoin(viewerReactions, eq(viewerReactions.videoId, videos.id)) //viewerReaction 可能不存在（用户未登录或未互动），所以要用左连接。
+        .where(eq(videos.id, input.id))
+        .limit(1)
+        .groupBy(videos.id, users.id, viewerReactions.type); //TODO:有count
+      // 先使用where筛选出目标视频，再子查询，
       if (!existingVideo) {
         throw new TRPCError({ code: "NOT_FOUND" });
       }

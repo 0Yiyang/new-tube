@@ -9,7 +9,7 @@ import superjson from "superjson";
 // 定义Context类型，createTRPCContext()在每次调用 tRPC 时都会被调用，因此批处理请求将共享一个context。
 export const createTRPCContext = cache(async () => {
   const { userId } = await auth();
-  return { ClerkUserId: userId };
+  return { clerkUserId: userId };
 });
 export type Context = Awaited<ReturnType<typeof createTRPCContext>>;
 // Avoid exporting the entire t-object
@@ -35,14 +35,14 @@ export const protectedProcedure = t.procedure.use(async function isAuthed(
 ) {
   const { ctx } = opts;
   // 使用Clerk登录
-  if (!ctx.ClerkUserId) {
+  if (!ctx.clerkUserId) {
     throw new TRPCError({ code: "UNAUTHORIZED" });
   }
   // db里有没有记录
   const [user] = await db
     .select()
     .from(users)
-    .where(eq(users.clerkId, ctx.ClerkUserId))
+    .where(eq(users.clerkId, ctx.clerkUserId))
     .limit(1);
   if (!user) {
     throw new TRPCError({ code: "UNAUTHORIZED" });
