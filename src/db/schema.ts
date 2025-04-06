@@ -29,11 +29,54 @@ export const users = pgTable(
   (t) => [uniqueIndex("clerk_id_idx").on(t.clerkId)]
   // 加上唯一索引，确保其在表中唯一
 );
+
+// 有多个关系在subscriptions" 和"users". 需要确认每个关系的名字_____在应用层面上
 export const userRelations = relations(users, ({ many }) => ({
   videos: many(videos),
   videoViews: many(videoViews),
   videoReactions: many(videoReactions),
+  subscriptions: many(subscriptions, {
+    relationName: "subscriptions_viewer_id_fkey",
+    // 观看者的订阅表，users.id->viewer_id
+  }),
+  subscribers: many(subscriptions, {
+    relationName: "subscriptions_creator_id_fkey",
+    // 创建者的粉丝列表，creator_id-》users.id
+  }),
 }));
+
+export const subscriptions = pgTable(
+  "subscriptions",
+  {
+    viewerId: uuid("viewer_id")
+      .references(() => users.id, { onDelete: "cascade" })
+      .notNull(),
+    creatorId: uuid("creator_id")
+      .references(() => users.id, { onDelete: "cascade" })
+      .notNull(),
+    createAt: timestamp("create_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (t) => [
+    primaryKey({
+      name: "subscriptions_pk",
+      columns: [t.viewerId, t.creatorId],
+    }),
+  ]
+);
+export const subscriptionRelations = relations(subscriptions, ({ one }) => ({
+  viewerId: one(users, {
+    references: [users.id],
+    fields: [subscriptions.viewerId],
+    relationName: "subscriptions_viewer_id_fkey",
+  }),
+  creatorId: one(users, {
+    references: [users.id],
+    fields: [subscriptions.creatorId],
+    relationName: "subscriptions_creator_id_fkey",
+  }),
+}));
+
 export const categories = pgTable(
   "categories",
   {
@@ -50,6 +93,8 @@ export const VideoVisibility = pgEnum("video_visibility", [
   "private",
   "public",
 ]);
+
+// videos
 export const videos = pgTable("videos", {
   id: uuid("id").primaryKey().defaultRandom(),
   title: text("tittle").notNull(),
@@ -96,6 +141,8 @@ export const videoRelations = relations(videos, ({ one, many }) => ({
   videoViews: many(videoViews),
   videoReactions: many(videoReactions),
 }));
+
+// videoViews
 export const videoViews = pgTable(
   "video_views",
   {

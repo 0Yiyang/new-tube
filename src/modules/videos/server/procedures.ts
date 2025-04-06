@@ -1,5 +1,6 @@
 import db from "@/db";
 import {
+  subscriptions,
   users,
   videoReactions,
   videos,
@@ -14,7 +15,7 @@ import {
   protectedProcedure,
 } from "@/trpc/init";
 import { TRPCError } from "@trpc/server";
-import { and, eq, getTableColumns, inArray } from "drizzle-orm";
+import { and, eq, getTableColumns, inArray, isNotNull } from "drizzle-orm";
 import { UTApi } from "uploadthing/server";
 import { z } from "zod";
 
@@ -47,14 +48,31 @@ export const videosRouter = createTRPCRouter({
           })
           .from(videoReactions)
           .where(inArray(videoReactions.userId, userId ? [userId] : []))
-        // 没登陆，登录但是没有互动（）
+        // 没登陆，登录但是没有互动（）-----处理未授权用户何以授权用户小技巧✔
       );
+
+      // 该观众的所有订阅记录
+      const viewerSubscriptions = db.$with("viewer_subscriptions").as(
+        db
+          .select()
+          .from(subscriptions)
+          .where(inArray(subscriptions.viewerId, userId ? [userId] : []))
+      );
+
       const [existingVideo] = await db
-        .with(viewerReactions) //.with() 将其引入主查询中，使其可被引用。
+        .with(viewerReactions, viewerSubscriptions) //.with() 将其引入主查询中，使其可被引用。
         .select({
           ...getTableColumns(videos),
+          // 作者的信息
           user: {
             ...getTableColumns(users),
+            subscriberCount: db.$count(
+              subscriptions,
+              eq(subscriptions.creatorId, users.id)
+            ), //每个作者和订阅者对应一条记录，查询包含该creator有几条记录
+            viewerSubscribed: isNotNull(viewerSubscriptions.viewerId).mapWith(
+              Boolean
+            ), //看有没有订阅---isNOtNUll在一个查询的select里面，会返回一个未知类型，所以使用操作符mapWith(Boolean)，将他赋值给boolean类型
           },
           viewCount: db.$count(videoViews, eq(videoViews.videoId, videos.id)), //子查询，与主查询的 videos 表动态关联：统计观看次数 关联当前视频的ID
           likeCount: db.$count(
@@ -77,9 +95,19 @@ export const videosRouter = createTRPCRouter({
         .from(videos)
         .innerJoin(users, eq(videos.userId, users.id)) // 关联作者，
         .leftJoin(viewerReactions, eq(viewerReactions.videoId, videos.id)) //viewerReaction 可能不存在（用户未登录或未互动），所以要用左连接。
+        // TODO:是不是制成一个表，再从表中查询❓
+        .leftJoin(
+          viewerSubscriptions,
+          eq(viewerSubscriptions.creatorId, users.id) //这里的users.id依赖于innerjoin的查询
+        ) //viewerReaction 可能不存在（用户未登录或未互动），所以要用左连接。
         .where(eq(videos.id, input.id))
         .limit(1)
-        .groupBy(videos.id, users.id, viewerReactions.type); //TODO:有count
+        .groupBy(
+          videos.id,
+          users.id,
+          viewerReactions.type,
+          viewerSubscriptions.viewerId
+        ); //TODO:有count
       // 先使用where筛选出目标视频，再子查询，
       if (!existingVideo) {
         throw new TRPCError({ code: "NOT_FOUND" });
