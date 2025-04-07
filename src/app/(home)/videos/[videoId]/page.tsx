@@ -8,6 +8,8 @@ const Page = async ({ params }: PageProps) => {
   const { videoId } = await params;
   // 预加载视频
   void trpc.videos.getOne.prefetch({ id: videoId });
+  // TODO:改成无限
+  void trpc.comments.getMany.prefetch({ videoId: videoId });
   return (
     <HydrateClient>
       <VideoView videoId={videoId} />

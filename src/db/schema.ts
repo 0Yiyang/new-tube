@@ -43,6 +43,7 @@ export const userRelations = relations(users, ({ many }) => ({
     relationName: "subscriptions_creator_id_fkey",
     // 创建者的粉丝列表，creator_id-》users.id
   }),
+  comments: many(comments),
 }));
 
 export const subscriptions = pgTable(
@@ -65,12 +66,12 @@ export const subscriptions = pgTable(
   ]
 );
 export const subscriptionRelations = relations(subscriptions, ({ one }) => ({
-  viewerId: one(users, {
+  viewer: one(users, {
     references: [users.id],
     fields: [subscriptions.viewerId],
     relationName: "subscriptions_viewer_id_fkey",
   }),
-  creatorId: one(users, {
+  creator: one(users, {
     references: [users.id],
     fields: [subscriptions.creatorId],
     relationName: "subscriptions_creator_id_fkey",
@@ -140,8 +141,34 @@ export const videoRelations = relations(videos, ({ one, many }) => ({
   }),
   videoViews: many(videoViews),
   videoReactions: many(videoReactions),
+  comments: many(comments),
 }));
 
+export const comments = pgTable("comments", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id")
+    .references(() => users.id, { onDelete: "cascade" })
+    .notNull(),
+  videoId: uuid("video_id")
+    .references(() => videos.id, { onDelete: "cascade" })
+    .notNull(),
+  value: text("value").notNull(),
+  createAt: timestamp("create_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+export const commentsRelations = relations(comments, ({ one }) => ({
+  user: one(users, {
+    references: [users.id],
+    fields: [comments.userId],
+  }),
+  video: one(videos, {
+    references: [videos.id],
+    fields: [comments.videoId],
+  }),
+}));
+export const commentSelectSchema = createSelectSchema(comments);
+export const commentUpdateSchema = createUpdateSchema(comments);
+export const commentInsertSchema = createInsertSchema(comments);
 // videoViews
 export const videoViews = pgTable(
   "video_views",
