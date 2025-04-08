@@ -15,6 +15,9 @@ import {
   createSelectSchema,
 } from "drizzle-zod";
 import { z } from "zod";
+
+export const reactionType = pgEnum("reaction_type", ["like", "dislike"]);
+
 export const users = pgTable(
   "users",
   {
@@ -44,6 +47,7 @@ export const userRelations = relations(users, ({ many }) => ({
     // 创建者的粉丝列表，creator_id-》users.id
   }),
   comments: many(comments),
+  commentReactions: many(commentReactions),
 }));
 
 export const subscriptions = pgTable(
@@ -156,7 +160,7 @@ export const comments = pgTable("comments", {
   createAt: timestamp("create_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
-export const commentsRelations = relations(comments, ({ one }) => ({
+export const commentsRelations = relations(comments, ({ one, many }) => ({
   user: one(users, {
     references: [users.id],
     fields: [comments.userId],
@@ -165,10 +169,12 @@ export const commentsRelations = relations(comments, ({ one }) => ({
     references: [videos.id],
     fields: [comments.videoId],
   }),
+  reactions: many(commentReactions),
 }));
 export const commentSelectSchema = createSelectSchema(comments);
 export const commentUpdateSchema = createUpdateSchema(comments);
 export const commentInsertSchema = createInsertSchema(comments);
+
 // videoViews
 export const videoViews = pgTable(
   "video_views",
@@ -204,8 +210,47 @@ export const videoViewRelations = relations(videoViews, ({ one }) => ({
   }),
 }));
 
-// Reaction
-export const reactionType = pgEnum("reaction_type", ["like", "dislike"]);
+// CommentReaction
+export const commentReactions = pgTable(
+  "comment_reactions",
+  {
+    userId: uuid("user_id")
+      .references(() => users.id, { onDelete: "cascade" })
+      .notNull(),
+    commentId: uuid("comment_id")
+      .references(() => comments.id, { onDelete: "cascade" })
+      .notNull(),
+    type: reactionType("type").notNull(), //在创建reactions是必须的
+    createAt: timestamp("create_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (t) => [
+    // 一个用户对应一条评论条，只能由一条记录
+    primaryKey({
+      name: "comment_reactions_pk",
+      columns: [t.userId, t.commentId],
+    }),
+  ]
+);
+export const commentReactionSelectSchema = createSelectSchema(commentReactions);
+export const commentReactionUpdateSchema = createUpdateSchema(commentReactions);
+export const commentReactionInsertSchema = createInsertSchema(commentReactions);
+
+export const commentReactionsRelations = relations(
+  commentReactions,
+  ({ one }) => ({
+    user: one(users, {
+      fields: [commentReactions.userId],
+      references: [users.id],
+    }),
+    comment: one(comments, {
+      fields: [commentReactions.commentId],
+      references: [comments.id],
+    }),
+  })
+);
+
+// VideoReaction
 export const videoReactions = pgTable(
   "video_reactions",
   {
@@ -221,7 +266,7 @@ export const videoReactions = pgTable(
   },
   (t) => [
     primaryKey({
-      name: "vieo_reactions_pk",
+      name: "video_reactions_pk",
       columns: [t.userId, t.videoId],
     }),
   ]

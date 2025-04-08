@@ -107,7 +107,7 @@ export const videosRouter = createTRPCRouter({
           users.id,
           viewerReactions.type,
           viewerSubscriptions.viewerId
-        ); //TODO:有count
+        ); //TODO:没有使用聚合函数的  有count
       // 先使用where筛选出目标视频，再子查询，
       if (!existingVideo) {
         throw new TRPCError({ code: "NOT_FOUND" });

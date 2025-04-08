@@ -12,14 +12,20 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { MessageSquareIcon, MoreVerticalIcon, TrashIcon } from "lucide-react";
+import {
+  MessageSquareIcon,
+  MoreVerticalIcon,
+  ThumbsDownIcon,
+  ThumbsUpIcon,
+  TrashIcon,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface CommentItemProps {
-  comment: CommentsGetManyOutput[number]; //TODO:选这个，这里的schema是到时候自己选择的返回值,getMany本来就返回一个数组
+  comment: CommentsGetManyOutput[number]; //TODO:选这个，这里的schema是到时候自己选择<getMany>的返回值,getMany本来就返回一个数组
   // comment:z.infer<typeof commentInsertSchema>
 }
 
-// http://localhost:3000/videos/272646b7-1a5b-4ae6-a58b-63cfde813d95
 export const CommentItem = ({ comment }: CommentItemProps) => {
   const { userId } = useAuth();
   const clerk = useClerk();
@@ -28,6 +34,28 @@ export const CommentItem = ({ comment }: CommentItemProps) => {
     onSuccess: () => {
       utils.comments.getMany.invalidate({ videoId: comment.videoId });
       toast.success("Deleted successfully");
+    },
+    onError: (error) => {
+      toast.error("Something went wrong");
+      if (error.data?.code === "UNAUTHORIZED") {
+        clerk.openSignIn();
+      }
+    },
+  });
+  const dislike = trpc.commentReactions.dislike.useMutation({
+    onSuccess: () => {
+      utils.comments.getMany.invalidate({ videoId: comment.videoId });
+    },
+    onError: (error) => {
+      toast.error("Something went wrong");
+      if (error.data?.code === "UNAUTHORIZED") {
+        clerk.openSignIn();
+      }
+    },
+  });
+  const like = trpc.commentReactions.like.useMutation({
+    onSuccess: () => {
+      utils.comments.getMany.invalidate({ videoId: comment.videoId });
     },
     onError: (error) => {
       toast.error("Something went wrong");
@@ -58,9 +86,49 @@ export const CommentItem = ({ comment }: CommentItemProps) => {
             </div>
           </Link>
           <p className="text-sm">{comment.value}</p>
-          {/* TODO:add reactions */}
+          <div className="flex items-center gap-2 mt-1">
+            <div className="flex items-center gap-2">
+              <Button
+                size="icon"
+                className="size-8"
+                variant="ghost"
+                disabled={dislike.isPending || like.isPending}
+                onClick={() => {
+                  like.mutate({ commentId: comment.id });
+                }}
+              >
+                <ThumbsUpIcon
+                  className={cn(
+                    comment.viewerReaction === "like" && "fill-black"
+                  )}
+                />
+              </Button>
+              <span className="text-muted-foreground text-xs">
+                {comment.likeCount}
+              </span>
+              <Button
+                size="icon"
+                className="size-8"
+                variant="ghost"
+                disabled={dislike.isPending || like.isPending}
+                onClick={() => {
+                  dislike.mutate({ commentId: comment.id });
+                }}
+              >
+                <ThumbsDownIcon
+                  className={cn(
+                    comment.viewerReaction === "dislike" && "fill-black"
+                  )}
+                />
+              </Button>
+              <span className="text-muted-foreground text-xs">
+                {comment.dislikeCount}
+              </span>
+            </div>
+          </div>
         </div>
-        <DropdownMenu>
+        {/* TODO:modal={false},不影响滚动条 */}
+        <DropdownMenu modal={false}>
           {/* TODO: 避免嵌套按钮*/}
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="size-8">
