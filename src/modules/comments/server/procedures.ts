@@ -13,6 +13,8 @@ import {
   eq,
   getTableColumns,
   inArray,
+  isNotNull,
+  isNull,
   lt,
   or,
 } from "drizzle-orm";
@@ -42,16 +44,29 @@ export const commentsRouter = createTRPCRouter({
   create: protectedProcedure
     .input(
       z.object({
+        parentId: z.string().uuid().nullish(),
         value: z.string(),
         videoId: z.string().uuid(),
       })
     )
     .mutation(async ({ ctx, input }) => {
       const { id: userId } = ctx.user;
-      const { videoId, value } = input;
+      const { videoId, value, parentId } = input;
+      const [existingComment] = await db
+        .select()
+        .from(comments)
+        .where(inArray(comments.id, parentId ? [parentId] : []));
+      if (!existingComment && parentId) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
+      //不可以给reply reply
+      if (existingComment?.parentId && parentId) {
+        throw new TRPCError({ code: "BAD_REQUEST" });
+      }
       const [createdcomment] = await db
         .insert(comments)
         .values({
+          parentId,
           value,
           userId,
           videoId,
@@ -60,10 +75,12 @@ export const commentsRouter = createTRPCRouter({
 
       return createdcomment;
     }),
+  // 只加载comment,也可以选择加载reply
   getMany: baseProcedure
     .input(
       z.object({
         videoId: z.string().uuid(),
+        parentId: z.string().uuid().nullish(),
         cursor: z
           .object({
             id: z.string().uuid(),
@@ -74,7 +91,7 @@ export const commentsRouter = createTRPCRouter({
       })
     )
     .query(async ({ input, ctx }) => {
-      const { videoId, cursor, limit } = input;
+      const { videoId, cursor, limit, parentId } = input;
       const { clerkUserId } = ctx;
 
       let userId;
@@ -95,6 +112,17 @@ export const commentsRouter = createTRPCRouter({
           .from(commentReactions)
           .where(inArray(commentReactions.userId, userId ? [userId] : []))
       );
+      // 加上去，再执行这个声明
+      const replies = db.$with("replies").as(
+        db
+          .select({
+            parentId: comments.parentId,
+            count: count(comments.id).as("count"), // 计算每个 parentId 的reply（comments.id） 的数量
+          })
+          .from(comments)
+          .where(isNotNull(comments.parentId)) // 只统计回复（有 parentId 的评论）
+          .groupBy(comments.parentId) // 按 parentId 分组
+      );
 
       const [totalData, data] = await Promise.all([
         db
@@ -105,9 +133,10 @@ export const commentsRouter = createTRPCRouter({
           .where(eq(comments.videoId, videoId)),
 
         db
-          .with(viewerReactions)
+          .with(viewerReactions, replies)
           .select({
             user: users,
+            replyCount: replies.count,
             likeCount: db.$count(
               commentReactions,
               and(
@@ -129,6 +158,9 @@ export const commentsRouter = createTRPCRouter({
           .where(
             and(
               eq(comments.videoId, videoId),
+              parentId
+                ? eq(comments.parentId, parentId) //加载replies（指定comment）
+                : isNull(comments.parentId), //筛选出来没有parentId的
               cursor
                 ? or(
                     // TODO:排序不懂，
@@ -142,10 +174,11 @@ export const commentsRouter = createTRPCRouter({
             )
           )
           .innerJoin(users, eq(comments.userId, users.id))
-          .leftJoin(viewerReactions, eq(comments.id, viewerReactions.commentId))
+          .leftJoin(viewerReactions, eq(comments.id, viewerReactions.commentId)) //有没有匹配的，也就是没有reply.replies.count 会是 NULL（因为用了 leftJoin）
+          .leftJoin(replies, eq(comments.id, replies.parentId)) //comments.id,这个里面执行过后的comments表，
           .orderBy(desc(comments.updatedAt), desc(comments.id))
           .limit(limit + 1)
-          .groupBy(users.id, viewerReactions.type, comments.id),
+          .groupBy(users.id, viewerReactions.type, comments.id, replies.count),
       ]);
 
       const hasMore = data.length > limit;

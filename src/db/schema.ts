@@ -1,5 +1,6 @@
 import { relations } from "drizzle-orm";
 import {
+  foreignKey,
   integer,
   pgEnum,
   pgTable,
@@ -70,6 +71,7 @@ export const subscriptions = pgTable(
   ]
 );
 export const subscriptionRelations = relations(subscriptions, ({ one }) => ({
+  // 两个表之间有两种关系，需要不同名字取分relationName，viewer，subscriptions是一种关系在两种表的不同名字
   viewer: one(users, {
     references: [users.id],
     fields: [subscriptions.viewerId],
@@ -148,18 +150,30 @@ export const videoRelations = relations(videos, ({ one, many }) => ({
   comments: many(comments),
 }));
 
-export const comments = pgTable("comments", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  userId: uuid("user_id")
-    .references(() => users.id, { onDelete: "cascade" })
-    .notNull(),
-  videoId: uuid("video_id")
-    .references(() => videos.id, { onDelete: "cascade" })
-    .notNull(),
-  value: text("value").notNull(),
-  createAt: timestamp("create_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+export const comments = pgTable(
+  "comments",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    parentId: uuid("parent_id"),
+    userId: uuid("user_id")
+      .references(() => users.id, { onDelete: "cascade" })
+      .notNull(),
+    videoId: uuid("video_id")
+      .references(() => videos.id, { onDelete: "cascade" })
+      .notNull(),
+    value: text("value").notNull(),
+    createAt: timestamp("create_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (t) => [
+    // TODO:foreign就相当于立规矩   所有评论都存储在 comments 表里，，该表中的parentId，指向comments表的另一条记录的id,不是同一条记录
+    foreignKey({
+      columns: [t.parentId], // 儿子的parentId字段
+      foreignColumns: [t.id], // 必须指向父亲的实际id
+      name: "comment_parent_id_fkey",
+    }).onDelete("cascade"), //级联删除，删除父评论时，自动删除所有后代（避免僵尸回复）
+  ]
+);
 export const commentsRelations = relations(comments, ({ one, many }) => ({
   user: one(users, {
     references: [users.id],
@@ -170,6 +184,18 @@ export const commentsRelations = relations(comments, ({ one, many }) => ({
     fields: [comments.videoId],
   }),
   reactions: many(commentReactions),
+
+  // /表的自引用--一种关系  relationName 是双向关系的唯一标识符
+  //查父亲 有很多评论是一个评论的子级   定义「找爸爸」的关系
+  parentId: one(comments, {
+    references: [comments.id], //父
+    fields: [comments.parentId], //自己
+    relationName: "comment_parent_id_fkey",
+  }),
+  //查儿子们  //定义「找儿子」的关系
+  replies: many(comments, {
+    relationName: "comment_parent_id_fkey",
+  }),
 }));
 export const commentSelectSchema = createSelectSchema(comments);
 export const commentUpdateSchema = createUpdateSchema(comments);
