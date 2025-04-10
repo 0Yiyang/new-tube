@@ -7,6 +7,7 @@ import { videoReactionsRouter } from "@/modules/video-reactions/server/procedure
 import { subscriptionsRouter } from "@/modules/subscriptions/server/procedures";
 import { commentsRouter } from "@/modules/comments/server/procedures";
 import { commentReactionsRouter } from "@/modules/comment-reactions/server/procedures";
+import { suggestionsRouter } from "@/modules/suggestions/server/procedures";
 
 // 创建 tRPC 路由。
 // - 将多个 tRPC 过程组织在一起。(把router集合)
@@ -20,6 +21,7 @@ export const appRouter = createTRPCRouter({
   videoViews: videoViewsRouter,
   videoReactions: videoReactionsRouter,
   commentReactions: commentReactionsRouter,
+  suggestions: suggestionsRouter,
 });
 // export type definition of API
 export type AppRouter = typeof appRouter;

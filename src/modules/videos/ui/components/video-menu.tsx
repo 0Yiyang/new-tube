@@ -19,7 +19,11 @@ interface VideoMenuProps {
   variant?: "ghost" | "secondary";
 }
 
-export const VideoMenu = ({ videoId, onRemove, variant }: VideoMenuProps) => {
+export const VideoMenu = ({
+  videoId,
+  onRemove,
+  variant = "ghost",
+}: VideoMenuProps) => {
   // TODO:
   const onShare = () => {
     const fullUrl = `${

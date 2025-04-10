@@ -13,13 +13,13 @@ export const VideoView = ({ videoId }: VideoViewProps) => {
           {/* 用 flex-1 必加 min-w-0，除非子项宽度已固定。 */}
           <VideoSection videoId={videoId} />
           <div className="xl:hidden block mt-4">
-            <SuggestionsSection />
+            <SuggestionsSection videoId={videoId} />
           </div>
           <CommentSection videoId={videoId} />
         </div>
         {/* ：flex-shrink:1   Flex 容器空间不足时，允许该元素缩小。 */}
         <div className="hidden xl:block w-full xl:w-[380px] 2xl:w-[460px] shrink">
-          <SuggestionsSection />
+          <SuggestionsSection videoId={videoId} />
         </div>
       </div>
     </div>
