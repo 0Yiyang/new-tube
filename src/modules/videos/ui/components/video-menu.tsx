@@ -25,9 +25,8 @@ export const VideoMenu = ({
   onRemove,
   variant = "ghost",
 }: VideoMenuProps) => {
-  // TODO:
   const onShare = () => {
-    const fullUrl = `${APP_URL || "https://localhost:3000"}/videos/${videoId}`; //如果不是vercal部署，要更换
+    const fullUrl = `${APP_URL}/videos/${videoId}`;
     // 将文本内容写入系统内的剪贴板api
     navigator.clipboard.writeText(fullUrl);
     toast.success("Link copied to the clipboard");

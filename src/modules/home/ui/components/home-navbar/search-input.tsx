@@ -2,21 +2,31 @@
 import { Button } from "@/components/ui/button";
 import { APP_URL } from "@/constants";
 import { SearchIcon, XIcon } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 
 export const SearchInput = () => {
   const router = useRouter();
-  const [value, setValue] = useState("");
+  // TODO:
+  // useSearchParams--
+  // 如果路由是静态渲染的，则调用 useSearchParams 将导致客户端组件树（直到最近的 Suspense 边界 ）在客户端渲染,不在服务器端渲染，（执行不了）。
+  // 这允许 route 的一部分被静态渲染，
+  // 而使用 useSearchParams 的动态部分被 Client 端渲染。
+
+  // 如果路由是动态渲染的，则 useSearchParams 将在 Client Component 的初始服务器渲染期间在服务器上可用。
+  const searchparams = useSearchParams();
+  const query = searchparams.get("query") || "";
+  const categoryId = searchparams.get("categoryId") || "";
+  const [value, setValue] = useState(query);
 
   const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const url = new URL(
-      "/search",
-      APP_URL ? `https://${APP_URL}` : "http://localhost:3000"
-    );
+    const url = new URL("/search", APP_URL);
     const newQuery = value.trim();
     url.searchParams.set("query", encodeURIComponent(newQuery));
+    if (categoryId) {
+      url.searchParams.set("categoryId", categoryId); //TODO:这一步操作在categories里面也有
+    }
     if (newQuery === "") {
       url.searchParams.delete("query");
     }

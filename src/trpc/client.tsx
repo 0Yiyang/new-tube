@@ -19,12 +19,11 @@ function getQueryClient() {
   // Browser: use singleton pattern to keep the same query client
   return (clientQueryClientSingleton ??= makeQueryClient());
 }
-// TODO:担心trpc client不必要的添加协议
+
 function getUrl() {
   const base = (() => {
     if (typeof window !== "undefined") return "";
-    if (APP_URL) return `https://${APP_URL}`;
-    return "http://localhost:3000";
+    return APP_URL;
   })();
   return `${base}/api/trpc`;
 }

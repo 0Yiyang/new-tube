@@ -214,7 +214,7 @@ const FormSectionSuspense = ({ videoId }: FormSectionProps) => {
     //  这里使用update.isPending检查更新状态
   };
 
-  const fullUrl = `${APP_URL || "https://localhost:3000"}/videos/${videoId}`; // // 如果不是vercal部署，要更换
+  const fullUrl = `${APP_URL}/videos/${videoId}`;
 
   const [isCopied, SetIsCopied] = useState(false);
 
