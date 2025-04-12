@@ -53,6 +53,7 @@ import Image from "next/image";
 import { THUMBNAIL_FULLBACK } from "@/modules/videos/constant";
 import { ThumbnailUploadModal } from "../components/thumbnail-upload-modal";
 import { ThumbnailGenerateModal } from "../components/thumbnail-generate-modal";
+import { APP_URL } from "@/constants";
 
 interface FormSectionProps {
   videoId: string;
@@ -156,6 +157,17 @@ const FormSectionSuspense = ({ videoId }: FormSectionProps) => {
       toast.error("Something went wrong");
     },
   });
+  const revalidate = trpc.videos.revalidate.useMutation({
+    onSuccess: () => {
+      utils.studio.getMany.invalidate();
+      utils.studio.getOne.invalidate({ id: videoId });
+      toast.success("Video revalidated");
+      //  router.push("/studio");
+    },
+    onError: () => {
+      toast.error("Something went wrong");
+    },
+  });
 
   const restoreThumbnail = trpc.videos.restoreThumbnail.useMutation({
     onSuccess: () => {
@@ -202,9 +214,7 @@ const FormSectionSuspense = ({ videoId }: FormSectionProps) => {
     //  这里使用update.isPending检查更新状态
   };
 
-  const fullUrl = `${
-    process.env.VERCEL_URL || "https://localhost:3000"
-  }/videos/${videoId}`; // // 如果不是vercal部署，要更换
+  const fullUrl = `${APP_URL || "https://localhost:3000"}/videos/${videoId}`; // // 如果不是vercal部署，要更换
 
   const [isCopied, SetIsCopied] = useState(false);
 
@@ -259,6 +269,13 @@ const FormSectionSuspense = ({ videoId }: FormSectionProps) => {
                 </DropdownMenuTrigger>
                 {/* align；打开之后，content与trigger end对齐*/}
                 <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    onClick={() => revalidate.mutate({ id: videoId })}
+                  >
+                    <RotateCwIcon className="size-4 mr-2" />
+                    Revalidate
+                  </DropdownMenuItem>
+
                   {/* 回调删除  */}
                   <DropdownMenuItem
                     onClick={() => remove.mutate({ id: videoId })}

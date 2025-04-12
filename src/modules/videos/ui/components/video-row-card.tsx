@@ -5,7 +5,7 @@ import { VideoGetManyOutput } from "../../types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMemo } from "react";
 import Link from "next/link";
-import { VideoThumbnail } from "./vedio-thumbnail";
+import { VideoThumbnail, VideoThumbnailSkeleton } from "./vedio-thumbnail";
 import { cn } from "@/lib/utils";
 import { UserAvatar } from "@/components/user-avatar";
 import { UserInfo } from "@/modules/users/ui/components/user-info";
@@ -43,14 +43,42 @@ interface VideoRowCardProps extends VariantProps<typeof thumbnailVariants> {
   data: VideoGetManyOutput["items"][number];
   onRemove?: () => void;
 }
-export const VideoRowCardSkeleton = () => {
+export const VideoRowCardSkeleton = ({
+  size,
+}: VariantProps<typeof thumbnailVariants>) => {
   return (
-    <div>
-      <Skeleton />
+    <div className={videoRowCardVariants({ size })}>
+      <div className={thumbnailVariants({ size })}>
+        <VideoThumbnailSkeleton />
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex justify-between gap-x-2">
+          <div className="flex-1 min-w-0">
+            <Skeleton
+              className={cn("h-5 w-[40%]", size === "compact" && "h-4 w-[40%]")}
+            />
+            {size === "default" && (
+              <>
+                <Skeleton className="h-4 w-[20%] mt-1" />
+                <div className="flex items-center gap-2 my-3">
+                  <Skeleton className="size-8 rounded-full" />
+                  <Skeleton className="h-4 w-24" />
+                </div>
+              </>
+            )}
+
+            {size === "compact" && <Skeleton className="h-4 w-[50%] mt-1" />}
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
-export const VideoRowCard = ({ data, size, onRemove }: VideoRowCardProps) => {
+export const VideoRowCard = ({
+  data,
+  size = "default",
+  onRemove,
+}: VideoRowCardProps) => {
   const compactViews = useMemo(() => {
     return new Intl.NumberFormat("en", {
       notation: "compact",
@@ -102,7 +130,7 @@ export const VideoRowCard = ({ data, size, onRemove }: VideoRowCardProps) => {
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <p className="text-xs text-muted-foreground line-clamp-2 w-fit">
-                      {data.description}
+                      {data.description || "NO descriptions"}
                     </p>
                   </TooltipTrigger>
                   <TooltipContent

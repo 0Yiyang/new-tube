@@ -5,6 +5,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { APP_URL } from "@/constants";
 import {
   ListPlusIcon,
   MoreVerticalIcon,
@@ -26,9 +27,7 @@ export const VideoMenu = ({
 }: VideoMenuProps) => {
   // TODO:
   const onShare = () => {
-    const fullUrl = `${
-      process.env.VERCEL_URL || "https://localhost:3000"
-    }/videos/${videoId}`; //如果不是vercal部署，要更换
+    const fullUrl = `${APP_URL || "https://localhost:3000"}/videos/${videoId}`; //如果不是vercal部署，要更换
     // 将文本内容写入系统内的剪贴板api
     navigator.clipboard.writeText(fullUrl);
     toast.success("Link copied to the clipboard");

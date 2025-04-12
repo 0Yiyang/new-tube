@@ -1,17 +1,17 @@
 import db from "@/db";
 import { z } from "zod";
-import { eq, and, or, lt, desc, getTableColumns, not } from "drizzle-orm";
+import { eq, and, or, lt, desc, ilike, getTableColumns } from "drizzle-orm";
 import { users, videoReactions, videos, videoViews } from "@/db/schema";
-import { createTRPCRouter, baseProcedure } from "@/trpc/init";
-import { TRPCError } from "@trpc/server";
+import { baseProcedure, createTRPCRouter } from "@/trpc/init";
 
 // query：用于获取数据，不会修改数据库。
 // mutation：用于修改数据（如插入、更新、删除）。
-export const suggestionsRouter = createTRPCRouter({
+export const searchRouter = createTRPCRouter({
   getMany: baseProcedure
     .input(
       z.object({
-        videoId: z.string().uuid(),
+        query: z.string().nullish(),
+        categoryId: z.string().uuid().nullish(),
         cursor: z
           .object({
             id: z.string().uuid(),
@@ -22,14 +22,7 @@ export const suggestionsRouter = createTRPCRouter({
       })
     )
     .query(async ({ input }) => {
-      const { videoId, cursor, limit } = input;
-      const [existingVideo] = await db
-        .select()
-        .from(videos)
-        .where(eq(videos.id, videoId));
-      if (!existingVideo) {
-        throw new TRPCError({ code: "NOT_FOUND" });
-      }
+      const { cursor, limit, query, categoryId } = input;
       const data = await db
         .select({
           ...getTableColumns(videos),
@@ -54,13 +47,9 @@ export const suggestionsRouter = createTRPCRouter({
         .innerJoin(users, eq(videos.userId, users.id))
         .where(
           and(
-            eq(videos.visibility, "public"),
-            not(eq(videos.id, existingVideo.id)),
-            // inArray(videos.categoryId,existingVideo.categoryId?[existingVideo.categoryId]:[]),下面更加直接，在没有existingVideo。categoryId，就不生成eq语句
-            existingVideo.categoryId
-              ? eq(videos.categoryId, existingVideo.categoryId)
-              : undefined,
-
+            // TODO:找包含  ilike()
+            ilike(videos.title, `%${query}%`),
+            categoryId ? eq(videos.categoryId, categoryId) : undefined,
             cursor
               ? or(
                   lt(videos.updatedAt, cursor.updatedAt),
@@ -72,6 +61,7 @@ export const suggestionsRouter = createTRPCRouter({
               : undefined
           )
         )
+
         .orderBy(desc(videos.updatedAt), desc(videos.id))
         // 多取一个，看看还有没有剩余的
         .limit(limit + 1);

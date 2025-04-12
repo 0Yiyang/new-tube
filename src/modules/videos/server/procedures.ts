@@ -157,6 +157,53 @@ export const videosRouter = createTRPCRouter({
       });
       return workflowRunId;
     }),
+
+  // 如果只依靠webhook的返回设置状态，不保险。这里通过muxUploadId->assect->muxStatus,muxPlaybackId
+  // 如果webhooks失败了，如果webhooks失控了。。uploadedId是创建和upload.create连接时返回的
+  revalidate: protectedProcedure
+    .input(z.object({ id: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      const { id: userId } = ctx.user;
+      if (!userId) throw new TRPCError({ code: "BAD_REQUEST" });
+
+      const [existingVideo] = await db
+        .select()
+        .from(videos)
+        .where(and(eq(videos.id, input.id), eq(videos.userId, userId)));
+
+      if (!existingVideo) throw new TRPCError({ code: "BAD_REQUEST" });
+      if (!existingVideo.muxUploadId) {
+        throw new TRPCError({ code: "BAD_REQUEST" });
+      }
+      const upload = await mux.video.uploads.retrieve(
+        existingVideo.muxUploadId
+        //TODO:muxuploaded
+      );
+      if (!upload || !upload.asset_id) {
+        throw new TRPCError({ code: "BAD_REQUEST" });
+      }
+      const assest = await mux.video.assets.retrieve(upload.asset_id);
+      if (!assest) {
+        throw new TRPCError({ code: "BAD_REQUEST" });
+      }
+      const playbackId = assest.playback_ids?.[0].id;
+      const duration = assest.duration ? Math.round(assest.duration * 1000) : 0;
+      // const trackId=assest.tracks[0].id,
+      // const trackStatus=assest.tracks[0].status,
+      // TODO:自己找方法验证track
+      const [updatedVideo] = await db
+        .update(videos)
+        .set({
+          muxStatus: assest.status,
+          muxPlaybackId: playbackId,
+          muxAssetId: assest.id,
+          duration,
+        })
+        .where(and(eq(videos.id, input.id), eq(videos.userId, userId)))
+        .returning();
+      return updatedVideo;
+    }),
+
   restoreThumbnail: protectedProcedure
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
@@ -264,7 +311,7 @@ export const videosRouter = createTRPCRouter({
     }),
   create: protectedProcedure.mutation(async ({ ctx }) => {
     const { id: userId } = ctx.user;
-    // 创建upload上传权限,创建上传端点
+    // 创建upload上传权限,创建上传端点,
     const upload = await mux.video.uploads.create({
       new_asset_settings: {
         passthrough: userId,
@@ -294,6 +341,7 @@ export const videosRouter = createTRPCRouter({
       .returning();
     // TODO:returning()，用于delect,insert，update干什么->直接返回修改后的值，不用再查询一边
 
+    // 返回视频信息和上传URL供前端使用
     return {
       video: video,
       url: upload.url,

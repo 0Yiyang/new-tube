@@ -40,7 +40,7 @@ export const POST = async (request: Request) => {
     },
     SIGNING_SECRET
   );
-  // mux向该程序的webhook发请求，带着data
+  // mux向该程序的webhook发请求，带着data,
 
   switch (payload.type as WebhookEvent["type"]) {
     case "video.asset.created": {

@@ -8,6 +8,7 @@ import { subscriptionsRouter } from "@/modules/subscriptions/server/procedures";
 import { commentsRouter } from "@/modules/comments/server/procedures";
 import { commentReactionsRouter } from "@/modules/comment-reactions/server/procedures";
 import { suggestionsRouter } from "@/modules/suggestions/server/procedures";
+import { searchRouter } from "@/modules/search/server/procedure";
 
 // 创建 tRPC 路由。
 // - 将多个 tRPC 过程组织在一起。(把router集合)
@@ -22,6 +23,7 @@ export const appRouter = createTRPCRouter({
   videoReactions: videoReactionsRouter,
   commentReactions: commentReactionsRouter,
   suggestions: suggestionsRouter,
+  search: searchRouter,
 });
 // export type definition of API
 export type AppRouter = typeof appRouter;
