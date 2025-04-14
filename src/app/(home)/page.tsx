@@ -34,6 +34,7 @@
 //   );
 // }
 
+import { DEFAULT_LIMIT } from "@/constants";
 import { HomeView } from "@/modules/home/ui/views/home-view";
 import { HydrateClient, trpc } from "@/trpc/server";
 export const dynamic = "force-dynamic";
@@ -48,6 +49,10 @@ const Page = async ({ searchParams }: PageProps) => {
   const { categoryId } = await searchParams;
   // 动态预取TRPC数据
   void trpc.categories.getmany.prefetch();
+  void trpc.videos.getMany.prefetchInfinite({
+    limit: DEFAULT_LIMIT,
+    categoryId,
+  });
   return (
     // 客户端渲染时，把预取数据注入
     <HydrateClient>
