@@ -30,7 +30,7 @@ export const VideoReactions = ({
   const like = trpc.videoReactions.like.useMutation({
     onSuccess: () => {
       utils.videos.getOne.invalidate({ id: videoId });
-      //TODO: 喜欢的播放列表验证失效
+      utils.playlists.getLiked.invalidate();
     },
     onError: (error) => {
       toast.error("something went wrong");
@@ -43,7 +43,7 @@ export const VideoReactions = ({
     onSuccess: () => {
       // 这里的viewerReaction会改变，
       utils.videos.getOne.invalidate({ id: videoId });
-      //TODO: bu喜欢的播放列表验证失效
+      utils.playlists.getLiked.invalidate();
     },
 
     onError: (error) => {

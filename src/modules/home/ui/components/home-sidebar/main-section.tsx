@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/sidebar";
 import Link from "next/link";
 import { useAuth, useClerk } from "@clerk/nextjs";
+import { usePathname } from "next/navigation";
 const items = [
   {
     title: "Home",
@@ -32,6 +33,7 @@ const items = [
 export const MainSection = () => {
   const clerk = useClerk();
   const { isSignedIn } = useAuth();
+  const pathname = usePathname();
   return (
     <SidebarGroup>
       <SidebarGroupContent>
@@ -42,7 +44,7 @@ export const MainSection = () => {
                 // TODO:tooltip?
                 tooltip={item.title}
                 asChild
-                isActive={false} //TODO: change yo look at current pathname
+                isActive={pathname === item.url} //
                 onClick={(e) => {
                   if (!isSignedIn && item.auth) {
                     e.preventDefault();

@@ -1,7 +1,6 @@
 "use client";
 import { InfiniteScroll } from "@/components/infinite-scroll";
 import { DEFAULT_LIMIT } from "@/constants";
-import { useIsMobile } from "@/hooks/use-mobile";
 import {
   VideoGirdCard,
   VideoGirdCardSkeleton,
@@ -53,7 +52,6 @@ const ResultsSectionSkeleton = () => {
 };
 
 const ResultsSectionSuspense = ({ query, categoryId }: ResultsSectionProps) => {
-  const isMobile = useIsMobile();
   const [results, resultQuery] = trpc.search.getMany.useSuspenseInfiniteQuery(
     {
       query,
@@ -64,23 +62,22 @@ const ResultsSectionSuspense = ({ query, categoryId }: ResultsSectionProps) => {
   );
   return (
     <>
-      {isMobile ? (
-        <div className="flex flex-col gap-4 space-y-10">
-          {results.pages
-            .flatMap((page) => page.items)
-            .map((video) => (
-              <VideoGirdCard data={video} key={video.id} />
-            ))}
-        </div>
-      ) : (
-        <div className="flex flex-col gap-4 space-y-10">
-          {results.pages
-            .flatMap((page) => page.items)
-            .map((video) => (
-              <VideoRowCard data={video} key={video.id} />
-            ))}
-        </div>
-      )}
+      <div className="flex flex-col gap-4 space-y-10 md:hidden">
+        {results.pages
+          .flatMap((page) => page.items)
+          .map((video) => (
+            <VideoGirdCard data={video} key={video.id} />
+          ))}
+      </div>
+
+      <div className="hidden flex-col gap-4 space-y-10 md:flex">
+        {results.pages
+          .flatMap((page) => page.items)
+          .map((video) => (
+            <VideoRowCard data={video} key={video.id} />
+          ))}
+      </div>
+
       <InfiniteScroll
         hasNextPage={resultQuery.hasNextPage}
         isFetchingNextPage={resultQuery.isFetchingNextPage}
