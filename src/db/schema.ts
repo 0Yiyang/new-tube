@@ -19,6 +19,55 @@ import { z } from "zod";
 
 export const reactionType = pgEnum("reaction_type", ["like", "dislike"]);
 
+export const playlistVideos = pgTable(
+  "playlist_videos",
+  {
+    playlistId: uuid("playlist_id")
+      .references(() => playlists.id, { onDelete: "cascade" })
+      .notNull(),
+    videoId: uuid("video_id")
+      .references(() => videos.id, { onDelete: "cascade" })
+      .notNull(),
+    createAt: timestamp("create_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (t) => [
+    primaryKey({
+      name: "playlist_videos_pk",
+      columns: [t.playlistId, t.videoId],
+    }),
+  ]
+);
+// 一个video有多个·playlist   ,playlist有若干video
+export const playlistVideoRelations = relations(playlistVideos, ({ one }) => ({
+  video: one(videos, {
+    references: [videos.id],
+    fields: [playlistVideos.videoId],
+  }),
+  playlist: one(playlists, {
+    references: [playlists.id],
+    fields: [playlistVideos.playlistId],
+  }),
+}));
+export const playlists = pgTable("playlists", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text().notNull(),
+  description: text("description"),
+  userId: uuid("user_id")
+    .references(() => users.id, { onDelete: "cascade" })
+    .notNull(),
+  createAt: timestamp("create_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const playlistRelations = relations(playlists, ({ one, many }) => ({
+  user: one(users, {
+    fields: [playlists.userId],
+    references: [users.id],
+  }),
+  playlistVideos: many(playlistVideos),
+}));
+
 export const users = pgTable(
   "users",
   {
@@ -49,6 +98,7 @@ export const userRelations = relations(users, ({ many }) => ({
   }),
   comments: many(comments),
   commentReactions: many(commentReactions),
+  playlists: many(playlists),
 }));
 
 export const subscriptions = pgTable(
@@ -148,6 +198,7 @@ export const videoRelations = relations(videos, ({ one, many }) => ({
   videoViews: many(videoViews),
   videoReactions: many(videoReactions),
   comments: many(comments),
+  playlistVideos: many(playlistVideos),
 }));
 
 export const comments = pgTable(
