@@ -6,12 +6,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { APP_URL } from "@/constants";
+import { PlaylistAddModal } from "@/modules/playlists/ui/components/playlist-add-modal";
 import {
   ListPlusIcon,
   MoreVerticalIcon,
   ShareIcon,
   Trash2Icon,
 } from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
 
 interface VideoMenuProps {
@@ -25,6 +27,7 @@ export const VideoMenu = ({
   onRemove,
   variant = "ghost",
 }: VideoMenuProps) => {
+  const [isOpenPlaylistAddModal, setIsOpenPlaylistAddModal] = useState(false);
   const onShare = () => {
     const fullUrl = `${APP_URL}/videos/${videoId}`;
     // 将文本内容写入系统内的剪贴板api
@@ -32,30 +35,37 @@ export const VideoMenu = ({
     toast.success("Link copied to the clipboard");
   };
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant={variant} size="icon" className="rounded-full">
-          <MoreVerticalIcon />
-        </Button>
-      </DropdownMenuTrigger>
-      {/* TODO:阻止事件冒泡，避免意外出发父级元素 */}
-      <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-        <DropdownMenuItem onClick={onShare}>
-          <ShareIcon className="size-4 mr-2" />
-          Share
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => {}}>
-          <ListPlusIcon className="size-4 mr-2" />
-          Add to playlist
-        </DropdownMenuItem>
-        {/* 有删除权限才可以移除视频 */}
-        {onRemove && (
-          <DropdownMenuItem onClick={() => {}}>
-            <Trash2Icon className="size-4 mr-2" />
-            Remove
+    <>
+      <PlaylistAddModal
+        videoId={videoId}
+        open={isOpenPlaylistAddModal}
+        onOpenChange={setIsOpenPlaylistAddModal}
+      />
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant={variant} size="icon" className="rounded-full">
+            <MoreVerticalIcon />
+          </Button>
+        </DropdownMenuTrigger>
+        {/* TODO:阻止事件冒泡，避免意外出发父级元素 */}
+        <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+          <DropdownMenuItem onClick={onShare}>
+            <ShareIcon className="size-4 mr-2" />
+            Share
           </DropdownMenuItem>
-        )}
-      </DropdownMenuContent>
-    </DropdownMenu>
+          <DropdownMenuItem onClick={() => setIsOpenPlaylistAddModal(true)}>
+            <ListPlusIcon className="size-4 mr-2" />
+            Add to playlist
+          </DropdownMenuItem>
+          {/* 有删除权限才可以移除视频 */}
+          {onRemove && (
+            <DropdownMenuItem onClick={() => {}}>
+              <Trash2Icon className="size-4 mr-2" />
+              Remove
+            </DropdownMenuItem>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </>
   );
 };
