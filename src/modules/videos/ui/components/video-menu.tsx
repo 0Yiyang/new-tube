@@ -59,7 +59,7 @@ export const VideoMenu = ({
           </DropdownMenuItem>
           {/* 有删除权限才可以移除视频 */}
           {onRemove && (
-            <DropdownMenuItem onClick={() => {}}>
+            <DropdownMenuItem onClick={onRemove}>
               <Trash2Icon className="size-4 mr-2" />
               Remove
             </DropdownMenuItem>

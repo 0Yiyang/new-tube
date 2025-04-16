@@ -151,10 +151,14 @@ export const VideosSectionSuspense = () => {
                   <TableCell className="text-sm truncate">
                     {format(new Date(video.createAt), "d MMM yyyy")}
                   </TableCell>
-                  <TableCell className="text-sm text-right">Views</TableCell>
-                  <TableCell className="text-sm text-right">Comments</TableCell>
+                  <TableCell className="text-sm text-right">
+                    {video.viewCount}
+                  </TableCell>
+                  <TableCell className="text-sm text-right">
+                    {video.commentCount}
+                  </TableCell>
                   <TableCell className="text-sm text-right pr-6">
-                    Likes
+                    {video.likeCount}
                   </TableCell>
                 </TableRow>
               </Link>

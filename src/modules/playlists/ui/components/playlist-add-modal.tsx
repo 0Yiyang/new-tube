@@ -20,29 +20,6 @@ export const PlaylistAddModal = ({
   open,
   onOpenChange,
 }: PlaylistAddModalProps) => {
-  const utils = trpc.useUtils();
-  const addVideo = trpc.playlists.addVideo.useMutation({
-    onSuccess: () => {
-      toast.success("added to playlist");
-      utils.playlists.getMany.invalidate();
-      utils.playlists.getManyForVideo.invalidate({ videoId });
-      // TODO:getOne
-    },
-    onError: () => {
-      toast.error("Something went wrong");
-    },
-  });
-  const removeVideo = trpc.playlists.removeVideo.useMutation({
-    onSuccess: () => {
-      toast.success("removed from playlist");
-      utils.playlists.getMany.invalidate();
-      utils.playlists.getManyForVideo.invalidate({ videoId });
-      // TODO:getOne
-    },
-    onError: () => {
-      toast.error("Something went wrong");
-    },
-  });
   const {
     data: playlists,
     isLoading,
@@ -57,6 +34,31 @@ export const PlaylistAddModal = ({
       // 必须是在videoId,open同时满足条件，才触发
     }
   );
+  const utils = trpc.useUtils();
+  const addVideo = trpc.playlists.addVideo.useMutation({
+    onSuccess: (data) => {
+      toast.success("added to playlist");
+      utils.playlists.getMany.invalidate();
+      utils.playlists.getManyForVideo.invalidate({ videoId });
+      utils.playlists.getOne.invalidate({ id: data.playlistId });
+      utils.playlists.getVideos.invalidate({ playlistId: data.playlistId });
+    },
+    onError: () => {
+      toast.error("Something went wrong");
+    },
+  });
+  const removeVideo = trpc.playlists.removeVideo.useMutation({
+    onSuccess: (data) => {
+      toast.success("removed from playlist");
+      utils.playlists.getMany.invalidate();
+      utils.playlists.getOne.invalidate({ id: data.playlistId });
+      utils.playlists.getManyForVideo.invalidate({ videoId });
+      utils.playlists.getVideos.invalidate({ playlistId: data.playlistId });
+    },
+    onError: () => {
+      toast.error("Something went wrong");
+    },
+  });
 
   return (
     <ResponsiveModal
