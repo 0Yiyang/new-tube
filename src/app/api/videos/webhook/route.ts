@@ -85,6 +85,12 @@ export const POST = async (request: Request) => {
       // }
 
       // 从创建开始就上传到upload
+
+      // TODO:后台工作，移到workflow
+      // await workflow.trigger({
+      //   url:".../api/videos/intial-thumbnail"
+      // })
+      // _______________________________________________________________________________________-
       const tempthumbnailUrl = `https://image.mux.com/${playbackId}/thumbnail.jpg`;
       const temppreviewUrl = `https://image.mux.com/${playbackId}/animated.gif`;
       const duration = data.duration ? Math.round(data.duration * 1000) : 0;
@@ -97,6 +103,7 @@ export const POST = async (request: Request) => {
           status: 500,
         });
       }
+      // __________________________________________________________________________________________________--
 
       const thumbnailKey = uploadedThumbnailUrl.data.key;
       const thumbnailUrl = uploadedThumbnailUrl.data.url;

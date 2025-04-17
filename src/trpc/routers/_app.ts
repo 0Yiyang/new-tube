@@ -10,6 +10,7 @@ import { commentReactionsRouter } from "@/modules/comment-reactions/server/proce
 import { suggestionsRouter } from "@/modules/suggestions/server/procedures";
 import { searchRouter } from "@/modules/search/server/procedure";
 import { playlistsRouter } from "@/modules/playlists/server/procedures";
+import { usersRouter } from "@/modules/users/server/procedures";
 
 // 创建 tRPC 路由。
 // - 将多个 tRPC 过程组织在一起。(把router集合)
@@ -26,6 +27,7 @@ export const appRouter = createTRPCRouter({
   suggestions: suggestionsRouter,
   search: searchRouter,
   playlists: playlistsRouter,
+  users: usersRouter,
 });
 // export type definition of API
 export type AppRouter = typeof appRouter;
