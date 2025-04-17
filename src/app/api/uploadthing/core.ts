@@ -10,6 +10,48 @@ const f = createUploadthing();
 // 这段代码的核心功能是通过 UploadDropzone 上传文件，并处理权限验证、清理旧文件和保存新文件信息。
 // FileRouter for your app, can contain multiple FileRoutes
 export const ourFileRouter = {
+  bannerUploader: f({
+    image: {
+      maxFileSize: "4MB",
+      maxFileCount: 1,
+    },
+  })
+    .middleware(async () => {
+      const { userId: clerkUserId } = await auth();
+      if (!clerkUserId) throw new UploadThingError("Unauthorized");
+      const [existingUser] = await db
+        .select()
+        .from(users)
+        .where(eq(users.clerkId, clerkUserId));
+      if (!existingUser) throw new UploadThingError("Unauthorized");
+
+      if (existingUser.bannerKey) {
+        const utapi = new UTApi();
+        await utapi.deleteFiles(existingUser.bannerKey);
+        await db
+          .update(users)
+          .set({
+            bannerKey: null,
+            bannerUrl: null,
+          })
+          .where(eq(users.id, existingUser.id));
+      }
+      return { userId: existingUser.id }; // 返回值被onUploadComplete 当作`metadata`
+    })
+    .onUploadComplete(async ({ metadata, file }) => {
+      // 上传到Uploadthing成功之后，同步到数据库
+      await db
+        .update(users)
+        .set({
+          bannerUrl: file.url,
+          bannerKey: file.key,
+        })
+        .where(eq(users.id, metadata.userId));
+      // 当文件上传成功后，服务器端的 onUploadComplete 会执行，
+      //  并返回 { uploadedBy: metadata.user.id }。
+      // 客户端通过 onClientUploadComplete 接收到这个返回值，
+      return { uploadedBy: metadata.userId };
+    }),
   thumbnailUploader: f({
     image: {
       maxFileSize: "4MB",
