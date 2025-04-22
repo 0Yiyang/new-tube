@@ -14,6 +14,7 @@
     "db:seedcategory": "bun src/scripts/seed-categories.ts "
   },
   "dependencies": {
+    "@clerk/nextjs": "6.10.3",
     "@hookform/resolvers": "^4.1.1",
     "@mux/mux-node": "9.0.1",
     "@mux/mux-player-react": "3.2.4",
