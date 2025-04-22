@@ -1,11 +1,19 @@
 "use client";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { APP_URL } from "@/constants";
 import { SearchIcon, XIcon } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 
 export const SearchInput = () => {
+  return (
+    <Suspense fallback={<Skeleton className="h-10 w-full" />}>
+      <SearchInputSuspense />
+    </Suspense>
+  );
+};
+const SearchInputSuspense = () => {
   const router = useRouter();
   // useSearchParams--
   // 如果路由是静态渲染的，则调用 useSearchParams 将导致客户端组件树（直到最近的 Suspense 边界 ）在客户端渲染,不在服务器端渲染，（执行不了）。
