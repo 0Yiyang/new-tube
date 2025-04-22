@@ -131,6 +131,7 @@ export const commentsRouter = createTRPCRouter({
           })
           .from(comments)
           .where(eq(comments.videoId, videoId)),
+        //	统计主查询行数
 
         db
           .with(viewerReactions, replies)

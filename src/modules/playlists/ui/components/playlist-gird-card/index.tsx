@@ -21,7 +21,7 @@ export const PlaylistGridCardSkeleton = () => {
 };
 export const PlaylistGridCard = ({ data }: PlaylistGridCardProps) => {
   return (
-    <Link href={`/playlists/${data.id}`}>
+    <Link prefetch href={`/playlists/${data.id}`}>
       <div className="flex flex-col w-full gap-2 group">
         <PlaylistThumbnail
           imageUrl={data.thumbnailUrl || THUMBNAIL_FULLBACK}

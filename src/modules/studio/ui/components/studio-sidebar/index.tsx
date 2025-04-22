@@ -29,7 +29,11 @@ export const StudioSidebar = () => {
                   tooltip="Content"
                   asChild
                 >
-                  <Link href="/studio" className="flex items-center gap-4">
+                  <Link
+                    prefetch
+                    href="/studio"
+                    className="flex items-center gap-4"
+                  >
                     <VideoIcon size={5} />
                     <span className="text-sm">Content</span>
                   </Link>
@@ -38,7 +42,7 @@ export const StudioSidebar = () => {
               <Separator />
               <SidebarMenuItem>
                 <SidebarMenuButton tooltip="Exit Studio" asChild>
-                  <Link href="/" className="flex items-center gap-4">
+                  <Link prefetch href="/" className="flex items-center gap-4">
                     <LogOutIcon size={5} />
                     <span className="text-sm">Exit Studio</span>
                   </Link>

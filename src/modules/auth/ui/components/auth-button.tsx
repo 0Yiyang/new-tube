@@ -11,7 +11,7 @@ const AuthButton = () => {
     <>
       <SignedIn>
         <Button asChild variant="secondary">
-          <Link href="/studio">
+          <Link prefetch href="/studio">
             <ClapperboardIcon className="size-4" />
             Studio
           </Link>

@@ -12,17 +12,17 @@ export const SearchInput = () => {
   // 这允许 route 的一部分被静态渲染，而使用 useSearchParams 的动态部分被 Client 端渲染。
   // ->页面的大部分可以预先静态生成;只有需要访问查询参数的部分会在客户端渲染;:需要suspense
 
-  // 如果路由是动态渲染的，则 useSearchParams 将在 Client Component 的初始服务器渲染期间在服务器上可用。每次请求渲染
+  // 如果路由是动态在服务器端渲染的，则 useSearchParams 将在 Client Component 的初始服务器渲染期间在服务器上可用。每次请求渲染
   const searchparams = useSearchParams();
   const query = searchparams.get("query") || "";
   const categoryId = searchparams.get("categoryId") || "";
   const [value, setValue] = useState(query);
-
   const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const url = new URL("/search", APP_URL);
     const newQuery = value.trim();
-    url.searchParams.set("query", encodeURIComponent(newQuery));
+    url.searchParams.set("query", newQuery);
+    // url.searchParams.set("query", encodeURIComponent(newQuery));
     if (categoryId) {
       url.searchParams.set("categoryId", categoryId); //TODO:这一步操作在categories里面也有
     }

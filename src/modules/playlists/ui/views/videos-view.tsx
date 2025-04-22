@@ -6,7 +6,7 @@ interface VideosViewProps {
 export const VideosView = ({ playlistId }: VideosViewProps) => {
   return (
     // 每个section有良好的封装，一个出问题不让整个View崩溃
-    <div className="max-w-screen-md mx-auto mb-10 pt-2.5 flex flex-col gap-y-6 border ">
+    <div className="max-w-screen-md mx-auto mb-10 pt-2.5 flex flex-col gap-y-6  ">
       <PlaylistHeaderSection playlistId={playlistId} />
       <VideosSection playlistId={playlistId} />
     </div>

@@ -60,6 +60,7 @@ const ResultsSectionSuspense = ({ query, categoryId }: ResultsSectionProps) => {
     },
     { getNextPageParam: (lastPage) => lastPage.nextCursor }
   );
+  // console.log(query);
   return (
     <>
       <div className="flex flex-col gap-4 space-y-10 md:hidden">

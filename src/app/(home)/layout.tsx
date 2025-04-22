@@ -1,6 +1,6 @@
 import HomeLayout from "@/modules/home/ui/layouts/home-layout";
 // TODO:
-export const dynamic = "force-dynamic"; //-------层层嵌套，最里面的search-input如果是动态渲染，就不需要suspense
+// export const dynamic = "force-dynamic"; //-------层层嵌套，最里面的search-input如果是动态渲染，就不需要suspense
 interface LayoutProps {
   children: React.ReactNode;
 }
