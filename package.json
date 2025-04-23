@@ -15,6 +15,9 @@
   },
   "dependencies": {
     "@clerk/nextjs": "6.10.3",
+    "@upstash/ratelimit": "2.0.5",
+    "@upstash/redis": "1.34.3",
+    "axios": "^1.8.4",
     "@hookform/resolvers": "^4.1.1",
     "@mux/mux-node": "9.0.1",
     "@mux/mux-player-react": "3.2.4",
